@@ -1,0 +1,2 @@
+# XBomber
+Sms bomber script
