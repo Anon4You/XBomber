@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="banner.png" alt="XBomber Banner" width="450">
+<img src="banner.png" alt="XBomber Banner" width="300">
 
 # XBomber
 
