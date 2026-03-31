@@ -16,7 +16,7 @@ from rich.prompt import Prompt, Confirm
 
 console = Console()
 
-CONFIG = "services.json"
+CONFIG = "assets/services.json"
 MAX_SMS = 5000
 THREADS = 20
 

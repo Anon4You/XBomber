@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="banner.png" alt="XBomber Banner" width="250">
+<img src="assets/banner.png" alt="XBomber Banner" width="250">
 
 **A High-Performance SMS Bombing Tool for Educational Testing**
 
