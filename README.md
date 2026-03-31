@@ -24,14 +24,14 @@ A simple SMS bomber script designed to send multiple SMS messages to a target nu
    ```
 3. Make the script executable:
    ```bash
-   chmod +x xbomber.sh
+   chmod +x xbomber.py
    ```
 
 ## Usage
 
 Run the script using the following command:
 ```bash
-./xbomber.sh
+./xbomber.py
 ```
 
 Follow the on-screen prompts to enter the target phone number and other required details.
