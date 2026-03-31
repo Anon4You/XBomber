@@ -2,8 +2,6 @@
 
 <img src="banner.png" alt="XBomber Banner" width="250">
 
-# XBomber
-
 **A High-Performance SMS Bombing Tool for Educational Testing**
 
 [![Python](https://img.shields.io/badge/Language-Python-yellow?style=for-the-badge&logo=python)](https://www.python.org/)
