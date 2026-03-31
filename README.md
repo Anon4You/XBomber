@@ -60,7 +60,7 @@ chmod +x xbomber.py
 > Make sure you have the [Termux Void Repo](https://termuxvoid.github.io/) added to your sources before proceeding.
 
 ```bash
-apt install XBomber -y
+apt install xbomber -y
 ```
 
 ## 💻 Usage
