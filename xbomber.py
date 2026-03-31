@@ -7,6 +7,7 @@ import threading
 import webbrowser
 from queue import Queue
 import requests
+import subprocess  # <--- ADDED: Required for xdg-open
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -100,7 +101,7 @@ def bomb(phone, total):
     q.join()
     return results
 
-# ------------------- Premium Upsell -------------------
+# ------------------- Premium Upsell (UPDATED) -------------------
 def protect_number():
     console.print(Panel.fit(
         "[bold red]Number protection is only available in the PREMIUM script.[/bold red]\n"
@@ -109,8 +110,16 @@ def protect_number():
         border_style="red"
     ))
     if Confirm.ask("[bold yellow]Do you want to buy the premium script?[/bold yellow]"):
-        webbrowser.open("https://t.me/alienkrishn?text=xbomber%20premium")
-        console.print("[green]Opening Telegram...[/green]")
+        url = "https://t.me/alienkrishn?text=xbomber%20premium"
+        
+        # Try using xdg-open first (Standard on Linux)
+        try:
+            subprocess.run(['xdg-open', url], check=True)
+            console.print("[green]Opening Telegram via system default...[/green]")
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            # Fallback to python webbrowser if xdg-open fails or doesn't exist (Windows/Mac)
+            console.print("[yellow]xdg-open failed or not found. Trying default web browser...[/yellow]")
+            webbrowser.open(url)
     else:
         console.print("[blue]Returning to menu.[/blue]")
     input("\nPress Enter...")
