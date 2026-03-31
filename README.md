@@ -28,7 +28,9 @@ Before installing XBomber, ensure your environment meets the following requireme
 
 ## 🚀 Installation
 
-Follow these steps to set up the environment and install the tool:
+You can install XBomber using either of the following methods:
+
+### Method 1: From Source
 
 **1. Update Packages & Install Python**
 ```bash
@@ -50,6 +52,15 @@ pip install -r requirements.txt
 **4. Set Permissions**
 ```bash
 chmod +x xbomber.py
+```
+
+### Method 2: From Termux Void Repo
+
+> [!NOTE]
+> Make sure you have the [Termux Void Repo](https://termuxvoid.github.io/) added to your sources before proceeding.
+
+```bash
+apt install XBomber -y
 ```
 
 ## 💻 Usage
