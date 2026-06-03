@@ -1,3 +1,4 @@
+
 <div align="center">
 
 <img src="assets/banner.png" alt="XBomber Banner" width="220">
@@ -33,7 +34,7 @@
 
 XBomber stress-tests SMS OTP gateways by cycling through a configurable list of service endpoints. It is designed for security researchers and developers who need to verify that their own platforms handle request flooding correctly — rate limiting, OTP invalidation, and abuse detection.
 
-Version 3.0.0 is a complete architectural rewrite over v2. It introduces typed data models, persistent per-thread HTTP sessions, proxy health tracking, DNS pre-validation, and granular per-error reporting — all driven by a single `services.json` config file.
+Version 3.0.0 is a complete architectural rewrite over v2. It introduces typed data models, persistent per-thread HTTP sessions, proxy health tracking, DNS pre-validation, and granular per-error reporting — all driven by a single `services.json` config file located in the `assets/` directory.
 
 ---
 
@@ -42,7 +43,7 @@ Version 3.0.0 is a complete architectural rewrite over v2. It introduces typed d
 - Thread-pool concurrency with a configurable worker count
 - Persistent `requests.Session` per thread — connection reuse via HTTP keep-alive
 - Automatic retry with exponential backoff on 5xx and 429 responses
-- Proxy rotation with health scoring — failing proxies are down-weighted automatically
+- Proxy rotation using `proxies.txt` — failing proxies are skipped automatically
 - DNS pre-validation — dead domains are skipped before a connection is attempted
 - Per-request error classification — timeout, SSL, DNS, proxy, remote disconnect
 - Live Rich progress bar with count, percentage, elapsed time, and ETA
@@ -87,8 +88,8 @@ chmod +x xbomber.py
 
 ### From Termux Void Repo
 
-> [!NOTE]
-> Requires the [Termux Void Repo](https://termuxvoid.github.io/) to be added to your sources first.
+[!NOTE]
+Requires the Termux Void Repo to be added to your sources first.
 
 ```bash
 apt install xbomber -y
@@ -106,18 +107,17 @@ On first launch you will see the main menu:
 
 ```
   1. Start Bombing
-  2. Protect My Number
-  3. About / Services
-  4. Exit
+  2. About / Services
+  3. Exit
 ```
 
-Select **1**, enter the 10-digit target number (without country code), set the message count and optionally adjust the thread count. The tool runs the session and prints a full report when done.
+Select 1, enter the 10-digit target number (without country code), set the message count and optionally adjust the thread count. The tool runs the session and prints a full report when done.
 
 ---
 
 ## Configuration
 
-All service endpoints live in `assets/services.json`. The schema:
+All service endpoints live in assets/services.json. The schema:
 
 ```json
 {
@@ -139,30 +139,27 @@ All service endpoints live in `assets/services.json`. The schema:
 }
 ```
 
-| Field | Required | Values | Description |
-|---|---|---|---|
-| `name` | Yes | any string | Display name shown in reports |
-| `url` | Yes | URL with optional `{phone}` | Endpoint to hit |
-| `method` | No | `GET` `POST` `PUT` `PATCH` | Default: `POST` |
-| `phone_format` | No | `raw` `with_plus91` `91` `91-` | How `{phone}` is interpolated |
-| `encoding` | No | `json` `form` | Body encoding. Default: `json` |
-| `headers` | No | object | Request headers |
-| `data` | No | object or null | Request body. Use `{phone}` as placeholder |
+Field Required Values Description
+name Yes any string Display name shown in reports
+url Yes URL with optional {phone} Endpoint to hit
+method No GET POST PUT PATCH Default: POST
+phone_format No raw with_plus91 91 91- How {phone} is interpolated
+encoding No json form Body encoding. Default: json
+headers No object Request headers
+data No object or null Request body. Use {phone} as placeholder
 
 Invalid entries are skipped with a warning — they do not crash the load.
 
 ### Proxy Support
 
-To route traffic through proxies, populate the `PROXIES` list near the top of `xbomber.py`:
+To enable HTTP/HTTPS proxy rotation, create a file named proxies.txt in the same directory as xbomber.py. Each line should contain one proxy in the format:
 
-```python
-PROXIES = [
-    "http://user:pass@ip:port",
-    "http://ip:port",
-]
+```
+http://user:pass@ip:port
+http://ip:port
 ```
 
-When empty (the default), all requests go direct. The health-scoring system automatically deprioritizes proxies that fail and re-introduces them as they recover.
+When you run the tool, you will be prompted whether to use proxies. If you answer y and the file exists, proxies are loaded and rotated per request. Failed proxies are temporarily skipped. If the file is missing or empty, the tool falls back to direct connections.
 
 ---
 
@@ -183,19 +180,19 @@ XBomber/
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for a full history of changes across versions.
+See CHANGELOG.md for a full history of changes across versions.
 
 ---
 
-## License
+##License
 
-Released under the [MIT License](LICENSE). You are free to use, modify, and distribute this software. Attribution appreciated but not required.
+Released under the MIT License. You are free to use, modify, and distribute this software. Attribution appreciated but not required.
 
 ---
 
 <div align="center">
 
-Developed by [Anon4You](https://github.com/Anon4You)  
-Telegram — [t.me/nullxvoid](https://t.me/nullxvoid)
+Developed by Anon4You
+Telegram — t.me/nullxvoid
 
 </div>
