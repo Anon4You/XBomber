@@ -10,11 +10,11 @@ import threading
 from itertools import cycle
 from concurrent.futures import ThreadPoolExecutor
 
-import requests
+import requests 
 from requests.adapters import HTTPAdapter
 
 # ========================== GLOBALS =========================================
-VERSION = "3.2.0"
+VERSION = "3.2.0" 
 SERVICES_FILE = "./assets/services.json"
 PROXY_FILE = "proxies.txt"
 
