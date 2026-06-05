@@ -87,14 +87,14 @@ def bomb(phone, total):
     for t in tasks:
         q.put(t)
     results = []
-    
+
     def worker():
         while not q.empty():
             svc = q.get()
             ok = send_request(svc, phone)
             results.append((svc['name'], ok))
             q.task_done()
-    
+
     threads = [threading.Thread(target=worker) for _ in range(THREADS)]
     for t in threads:
         t.start()
@@ -111,7 +111,7 @@ def protect_number():
     ))
     if Confirm.ask("[bold yellow]Do you want to buy the premium script?[/bold yellow]"):
         url = "https://t.me/alienkrishn?text=xbomber%20premium"
-        
+
         # Try using xdg-open first (Standard on Linux)
         try:
             subprocess.run(['xdg-open', url], check=True)
@@ -140,9 +140,9 @@ def start_bombing():
         console.print(f"[red]Count must be between 1 and {MAX_SMS}.[/red]")
         input("Press Enter...")
         return
-    
+
     console.print(f"\n[yellow]Bombing [bold]{phone}[/bold] with {total} SMS...[/yellow]")
-    
+
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
@@ -154,10 +154,10 @@ def start_bombing():
         start_time = time.time()
         results = bomb(phone, total)
         progress.update(task, completed=total)
-    
+
     elapsed = time.time() - start_time
     success = sum(1 for _, ok in results if ok)
-    
+
     result_table = Table(title="Bombing Report", style="green")
     result_table.add_column("Metric", style="cyan")
     result_table.add_column("Value", style="white")
